@@ -1,0 +1,52 @@
+.create-group-container {
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .create-group-container input {
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  
+  .create-group-container button {
+    margin-top: 10px;
+  }
+  
+  .required-mark {
+    color: #ff4949;
+    margin-left: 4px;
+  }
+  
+  .at-input {
+    margin: 15px 0;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    
+    &__title {
+      font-size: 16px;
+      color: #333;
+      padding: 12px 15px;
+    }
+  }
+  
+  .panel-content {
+    padding: 15px;
+    
+    .join-button {
+      margin-top: 10px;
+    }
+  }
+  
+  .at-list__item__extra {
+    display: flex;
+    align-items: center;
+    
+    .at-button {
+      margin-left: 10px;
+      padding: 5px 10px;
+    }
+  }
