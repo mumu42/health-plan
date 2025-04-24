@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Image, Text } from '@tarojs/components';
 import { AtAccordion, AtList, AtListItem, AtForm, AtInput, AtButton } from 'taro-ui';
 import { AtFloatLayout, AtAvatar } from 'taro-ui';
-
+import { useSelector } from 'react-redux'
+import { RootState } from '@/store'
+import { creatGroup, getGroupList } from '@/api/index'
 type CreateGroupProps = {
   onAuthRequired: () => void;
 };
@@ -11,6 +13,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ onAuthRequired }) => {
   const [activePanel, setActivePanel] = useState<string>('');
   const [formData, setFormData] = useState({ groupName: '', description: '' });
   const [error, setError] = useState('');
+  const user = useSelector((state: RootState) => state.user)
 
   const handleCreate = () => {
     // 添加登录验证
@@ -24,9 +27,15 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ onAuthRequired }) => {
       setError('组名不能为空');
       return;
     }
-    
-    console.log('创建组:', formData);
-    setActivePanel('');
+
+    creatGroup({ name: formData.groupName, creatorId: user.id, memberIds: [] }).then(res => {
+      if (res.code === 200) {
+        console.log('创建成功:', res.data);
+        setActivePanel('');  // 关闭面板
+      } else {
+        setError('创建失败');
+      }
+    })
   };
 
   // 新增状态管理
@@ -38,6 +47,16 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ onAuthRequired }) => {
       { id: 2, name: '用户B', avatar: 'https://example.com/avatar2.jpg' }
     ]
   });
+
+  useEffect(() => {
+    user.id && getGroupList({creatorId: user.id}).then(res => {
+      if (res.code === 200) {
+        console.log('获取组列表成功:', res.data);
+      } else {
+        console.error('获取组列表失败:', res.message);
+      }
+    })
+  }, []);
 
   // 处理组成员删除
   const handleDeleteMember = (memberId: number) => {

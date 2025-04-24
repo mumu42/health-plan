@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Button, Text } from '@tarojs/components';
 import './CheckIn.scss';
+import { useSelector } from 'react-redux'
+import { RootState } from '@/store'
+import { checkIn } from '@/api/index'
 
 type CheckInProps = {
   onCheckInRequest?: () => void;  // 新增props用于通知父组件
@@ -11,6 +14,7 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
   const [checkInDate, setCheckInDate] = useState<string>('');
   // 新增当天日期状态
   const [today] = useState(new Date().toLocaleDateString());
+  const user = useSelector((state: RootState) => state.user)
   
   useEffect(() => {
     // 修改存储字段为打卡日期
@@ -26,12 +30,18 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
       return;
     }
 
-    const now = new Date();
-    const timeString = now.toLocaleString();
-    // 同时存储日期和时间
-    localStorage.setItem('checkInDate', today);
-    localStorage.setItem('checkInTime', timeString);
-    setCheckInDate(timeString);
+    checkIn({userId: user.id, groupId: '', status: 'completed', notes: ''}).then(res => {
+      if (res.code === 200) {
+        const now = new Date();
+        const timeString = now.toLocaleString();
+        // 同时存储日期和时间
+        localStorage.setItem('checkInDate', today);
+        localStorage.setItem('checkInTime', timeString);
+        setCheckInDate(timeString);
+      } else {
+        
+      }
+    })
   };
 
   return (

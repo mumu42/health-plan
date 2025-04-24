@@ -6,6 +6,9 @@ import './LoginCmp.scss';
 import loginImage from '@/assets/images/logo.gif'; 
 import { Image, View } from '@tarojs/components';
 import { login } from '@/api/index'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from '@/store'
+import { setUser } from '@/store/userSlice'
 
 // 定义登录表单的数据类型
 type LoginForm = {
@@ -24,6 +27,9 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
     password: '',
   });
   const [errorMessage, setErrorMessage] = useState<string>('');
+  // 在组件内
+  const user = useSelector((state: RootState) => state.user)
+  const dispatch = useDispatch<AppDispatch>()
 
   // 处理输入框值的变化
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +52,8 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
     login({nickname, password}).then(res => {
       // 简单验证，实际应用中应替换为后端验证逻辑
       if (res.code === 200) {
+        // 更新用户信息
+        dispatch(setUser({ name: '用户名', token: 'token值' }))
         setErrorMessage('');
         onClose();
         console.log(res, 'res===')
