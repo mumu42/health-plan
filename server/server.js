@@ -31,14 +31,36 @@ app.get('/test', (req, res) => {
   res.send('Hello World!');
 });
 
-// 定义用户模型Schema
+// 用户模型Schema
 const userSchema = new mongoose.Schema({
-  nickname: String,  // 用户昵称字段
-  password: String  // 用户密码字段
+  nickname: String,
+  password: String,
+  checkInCount: { type: Number, default: 0 } // 新增：用户打卡次数
 });
 // 创建User模型，并指定集合名称为'user'
 const User = mongoose.model('User', userSchema, 'user');
-console.log('User===', User)
+
+// 定义打卡记录模型Schema
+const checkSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },  // 关联用户ID
+  date: { type: Date, default: Date.now },  // 打卡日期，默认为当前时间
+  status: { type: String, enum: ['completed', 'skipped'] },  // 打卡状态
+  notes: String  // 打卡备注
+});
+// 创建Check模型，并指定集合名称为'check'
+const Check = mongoose.model('Check', checkSchema, 'check');
+
+// 定义群组模型Schema
+const groupSchema = new mongoose.Schema({
+  name: String,
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  createdAt: { type: Date, default: Date.now },
+  checkInCount: { type: Number, default: 0 } // 新增：群组打卡次数
+});
+
+// 创建Group模型，并指定集合名称为'group'
+const Group = mongoose.model('Group', groupSchema, 'group');
 
 // 定义登录接口，处理POST请求
 app.post('/login', async (req, res) => {
@@ -101,6 +123,366 @@ app.post('/login', async (req, res) => {
     });
   }
 });
+
+
+// 修改打卡接口
+app.post('/checkin', async (req, res) => {
+  try {
+    const { userId, groupId, status, notes } = req.body;
+    
+    // 验证用户是否存在
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 获取今天的开始和结束时间
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 检查今天是否已经打卡
+    const existingCheck = await Check.findOne({
+      userId,
+      date: { $gte: todayStart, $lte: todayEnd }
+    });
+
+    if (existingCheck) {
+      return res.status(400).json({
+        code: 400,
+        message: '今天已经打卡过了',
+        data: {
+          checkId: existingCheck._id,
+          status: existingCheck.status
+        }
+      });
+    }
+
+    // 创建打卡记录
+    const newCheck = new Check({
+      userId,
+      groupId,
+      status,
+      notes
+    });
+    await newCheck.save();
+
+    // 根据打卡状态决定累加值
+    const incrementValue = status === 'completed' ? 1 : 0;
+    
+    // 更新用户打卡次数
+    await User.findByIdAndUpdate(userId, { $inc: { checkInCount: incrementValue } });
+    
+    // 更新群组打卡次数
+    await Group.findByIdAndUpdate(groupId, { $inc: { checkInCount: incrementValue } });
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        checkId: newCheck._id,
+        userId: newCheck.userId,
+        groupId: newCheck.groupId,
+        date: newCheck.date,
+        status: newCheck.status,
+        userCheckInCount: (await User.findById(userId)).checkInCount,
+        groupCheckInCount: (await Group.findById(groupId)).checkInCount
+      },
+      message: '打卡成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义获取用户打卡记录接口，处理GET请求
+app.get('/checks/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // 验证用户是否存在
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 查询该用户的所有打卡记录，按日期降序排列
+    const checks = await Check.find({ userId })
+      .sort({ date: -1 })
+      .exec();
+
+    res.status(200).json({
+      code: 200,
+      data: checks.map(check => ({
+        id: check._id,
+        date: check.date,
+        status: check.status,
+        notes: check.notes
+      })),
+      message: '获取打卡记录成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+
+// 定义创建群组接口，处理POST请求
+app.post('/groups', async (req, res) => {
+  try {
+    const { name, creatorId, memberIds = [] } = req.body;
+    
+    // 验证创建者是否存在
+    const creator = await User.findById(creatorId);
+    if (!creator) {
+      return res.status(404).json({
+        code: 404,
+        message: '创建者不存在'
+      });
+    }
+
+    // 验证群组名称是否已存在
+    const existingGroup = await Group.findOne({ name });
+    if (existingGroup) {
+      return res.status(400).json({
+        code: 400,
+        message: '群组名称已存在'
+      });
+    }
+
+    // 验证所有成员是否存在
+    const members = await User.find({ _id: { $in: memberIds } });
+    if (members.length !== memberIds.length) {
+      return res.status(404).json({
+        code: 404,
+        message: '部分成员不存在'
+      });
+    }
+
+    // 创建新群组
+    const newGroup = new Group({
+      name,
+      creator: creatorId,
+      members: [...memberIds]  // 包含创建者和所有成员
+    });
+
+    // 保存群组到数据库
+    await newGroup.save();
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        id: newGroup._id,
+        name: newGroup.name,
+        creator: newGroup.creator,
+        members: newGroup.members,
+        createdAt: newGroup.createdAt
+      },
+      message: '群组创建成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+
+// 定义获取创建者的所有群组接口，处理GET请求
+app.get('/groups/creator/:creatorId', async (req, res) => {
+  try {
+    const { creatorId } = req.params;
+    
+    // 验证创建者是否存在
+    const creator = await User.findById(creatorId);
+    if (!creator) {
+      return res.status(404).json({
+        code: 404,
+        message: '创建者不存在'
+      });
+    }
+
+    // 查询该创建者的所有群组，按创建时间降序排列
+    const groups = await Group.find({ creator: creatorId })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    res.status(200).json({
+      code: 200,
+      data: groups.map(group => ({
+        id: group._id,
+        name: group.name,
+        creator: group.creator,
+        members: group.members,
+        createdAt: group.createdAt
+      })),
+      message: '获取群组列表成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义根据名称搜索群组接口，处理GET请求
+app.get('/groups/search', async (req, res) => {
+  try {
+    const { name } = req.query;
+    
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        code: 400,
+        message: '请输入群组名称'
+      });
+    }
+
+    // 使用正则表达式进行模糊搜索
+    const groups = await Group.find({ 
+      name: { $regex: name, $options: 'i' } 
+    })
+    .sort({ createdAt: -1 })
+    .exec();
+
+    res.status(200).json({
+      code: 200,
+      data: groups.map(group => ({
+        id: group._id,
+        name: group.name,
+        creator: group.creator,
+        memberCount: group.members.length,
+        createdAt: group.createdAt
+      })),
+      message: '搜索成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义加入群组接口，处理POST请求
+app.post('/groups/:groupId/join', async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { userId } = req.body;
+    
+    // 验证用户是否存在
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 验证群组是否存在
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        code: 404,
+        message: '群组不存在'
+      });
+    }
+
+    // 检查用户是否已在群组中
+    if (group.members.includes(userId)) {
+      return res.status(400).json({
+        code: 400,
+        message: '用户已在群组中'
+      });
+    }
+
+    // 添加用户到群组成员列表
+    group.members.push(userId);
+    await group.save();
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        groupId: group._id,
+        name: group.name,
+        members: group.members
+      },
+      message: '加入群组成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义获取用户排行榜接口，按打卡次数倒序排序
+app.get('/users/ranking', async (req, res) => {
+  try {
+    // 查询所有用户，按打卡次数倒序排序
+    const users = await User.find({})
+      .sort({ checkInCount: -1 })
+      .select('nickname checkInCount') // 只返回昵称和打卡次数
+      .exec();
+
+    res.status(200).json({
+      code: 200,
+      data: users.map(user => ({
+        nickname: user.nickname,
+        checkInCount: user.checkInCount
+      })),
+      message: '获取排行榜成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义获取群组排行榜接口，按打卡次数倒序排序
+app.get('/groups/ranking', async (req, res) => {
+  try {
+    // 查询所有群组，按打卡次数倒序排序
+    const groups = await Group.find({})
+      .sort({ checkInCount: -1 })
+      .select('name checkInCount members') // 返回名称、打卡次数和成员数
+      .populate('members', 'nickname') // 关联查询成员昵称
+      .exec();
+
+    res.status(200).json({
+      code: 200,
+      data: groups.map(group => ({
+        name: group.name,
+        checkInCount: group.checkInCount,
+        memberCount: group.members.length,
+        members: group.members.map(member => member.nickname) // 成员昵称列表
+      })),
+      message: '获取群组排行榜成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
 
 // 启动服务器，监听指定端口
 app.listen(port, () => {
