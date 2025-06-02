@@ -25,7 +25,8 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
   }, []);
 
   const handleCheckIn = () => {
-    if (!localStorage.getItem('userToken')) {
+    console.warn(user)
+    if (!user.id) {
       onCheckInRequest?.();  // 通知父组件需要登录
       return;
     }

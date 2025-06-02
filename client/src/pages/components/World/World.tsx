@@ -8,15 +8,17 @@ const World: React.FC = () => {
     const [userRankingList, setUserRankingList] = useState<any[]>([]);
     const [groupRankingList, setGroupRankingList] = useState<any[]>([]);
     useEffect(() => {
-        userRanking().then(res => {
+      userRanking().then(res => {
+          console.error('res=', res)
             if (res.code === 200) {
-                
+              setUserRankingList(res.data)
             }
         })
 
-        groupRanking().then(res => {
+      groupRanking().then(res => {
+        console.error('groupRanking=', res)
             if (res.code === 200) {
-                
+              setGroupRankingList(res.data)
             }
         })
     }, [])
@@ -30,7 +32,7 @@ const World: React.FC = () => {
                 <AtList>
                     {groupRankingList.map(i => {
                         return (
-                            <AtListItem title={i.name} extraText={i.score} />
+                            <AtListItem title={i.name} extraText={'总打卡：' + i.checkInCount} />
                         )
                     })}
                 </AtList>
@@ -44,7 +46,7 @@ const World: React.FC = () => {
                 <AtList>
                     {userRankingList.map(i => {
                         return (
-                            <AtListItem title={i.name} extraText={i.score} />
+                            <AtListItem title={i.nickname} extraText={'打卡次数：' + i.checkInCount} />
                         )
                     })}
                 </AtList>

@@ -1,43 +1,41 @@
 .create-group-container {
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
+  position: relative;
+  min-height: 100vh;
+}
   .create-group-container input {
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    margin-bottom: 0.1rem;
+    padding: 0.05rem;
+    border: 0.01rem solid #ccc;
+    border-radius: 0.03rem;
   }
   
   .create-group-container button {
-    margin-top: 10px;
+    margin-top: 0.1rem;
   }
   
   .required-mark {
     color: #ff4949;
-    margin-left: 4px;
+    margin-left: 0.04rem;
   }
   
   .at-input {
-    margin: 15px 0;
+    margin: 0.15rem 0;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 0.08rem;
+    box-shadow: 0 0.02rem 0.08rem rgba(0,0,0,0.1);
     
     &__title {
-      font-size: 16px;
+      font-size: 0.16rem;
       color: #333;
-      padding: 12px 15px;
+      padding: 0.12rem 0.15rem;
     }
   }
   
   .panel-content {
-    padding: 15px;
+    padding: 0.15rem;
     
     .join-button {
-      margin-top: 10px;
+      margin-top: 0.1rem;
     }
   }
   
@@ -46,7 +44,11 @@
     align-items: center;
     
     .at-button {
-      margin-left: 10px;
-      padding: 5px 10px;
+      margin-left: 0.1rem;
+      padding: 0.05rem 0.1rem;
     }
+  }
+
+  .at-float-layout {
+    top: 0;
   }

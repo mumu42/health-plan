@@ -3,7 +3,7 @@ import Taro from '@tarojs/taro';
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: 'http://10.10.82.89:3001', // 替换为实际API地址
+  baseURL: 'http://192.168.0.195:3001', // 替换为实际API地址
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'

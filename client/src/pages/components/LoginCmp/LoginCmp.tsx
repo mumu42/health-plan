@@ -52,8 +52,9 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
     login({nickname, password}).then(res => {
       // 简单验证，实际应用中应替换为后端验证逻辑
       if (res.code === 200) {
+        const { id, nickname } = res.data;
         // 更新用户信息
-        dispatch(setUser({ name: '用户名', token: 'token值' }))
+        dispatch(setUser({ name: nickname, token: 'token值', id}))
         setErrorMessage('');
         onClose();
         console.log(res, 'res===')

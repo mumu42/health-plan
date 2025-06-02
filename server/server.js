@@ -54,11 +54,14 @@ const Check = mongoose.model('Check', checkSchema, 'check');
 const groupSchema = new mongoose.Schema({
   name: String,
   creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  members: [{
+    _id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    nickname: String,
+    checkInCount: Number
+  }],
   createdAt: { type: Date, default: Date.now },
   checkInCount: { type: Number, default: 0 } // 新增：群组打卡次数
 });
-
 // 创建Group模型，并指定集合名称为'group'
 const Group = mongoose.model('Group', groupSchema, 'group');
 
@@ -67,10 +70,8 @@ app.post('/login', async (req, res) => {
   try {
     // 从请求体中获取昵称和密码
     const { nickname, password } = req.body;
-    console.log('User=', User)
     // 在数据库中查找匹配的用户
     const user = await User.findOne({ nickname, password });
-    console.log('user111=', user)
     if (user) {
       // 如果找到用户，返回成功响应
       res.status(200).json({
@@ -94,13 +95,13 @@ app.post('/login', async (req, res) => {
           // 创建新用户
           const newUser = new User({ nickname, password });
           // 保存用户到数据库
-          await newUser.save();
+          const saveUser = await newUser.save();
 
           res.status(200).json({
             code: 200,
             data: { 
-              id: user._id,  // 用户ID
-              nickname: user.nickname  // 用户昵称
+              id: saveUser._id,  // 用户ID
+              nickname: saveUser.nickname  // 用户昵称
             },
             message: '登录成功'
           });
@@ -151,6 +152,8 @@ app.post('/checkin', async (req, res) => {
       date: { $gte: todayStart, $lte: todayEnd }
     });
 
+    console.log('existingCheck=', existingCheck)
+
     if (existingCheck) {
       return res.status(400).json({
         code: 400,
@@ -169,7 +172,7 @@ app.post('/checkin', async (req, res) => {
       status,
       notes
     });
-    await newCheck.save();
+    const saveData = await newCheck.save();
 
     // 根据打卡状态决定累加值
     const incrementValue = status === 'completed' ? 1 : 0;
@@ -178,22 +181,26 @@ app.post('/checkin', async (req, res) => {
     await User.findByIdAndUpdate(userId, { $inc: { checkInCount: incrementValue } });
     
     // 更新群组打卡次数
-    await Group.findByIdAndUpdate(groupId, { $inc: { checkInCount: incrementValue } });
+    groupId && await Group.findByIdAndUpdate(groupId, { $inc: { checkInCount: incrementValue } });
 
+    const groupCheckInCount = groupId ? (await Group.findById(groupId)).checkInCount : ''
+
+    const userCheckInCount = (await User.findById(userId)).checkInCount
     res.status(200).json({
       code: 200,
       data: {
-        checkId: newCheck._id,
-        userId: newCheck.userId,
-        groupId: newCheck.groupId,
-        date: newCheck.date,
-        status: newCheck.status,
-        userCheckInCount: (await User.findById(userId)).checkInCount,
-        groupCheckInCount: (await Group.findById(groupId)).checkInCount
+        checkId: saveData._id,
+        userId: saveData.userId,
+        groupId: saveData.groupId,
+        date: saveData.date,
+        status: saveData.status,
+        userCheckInCount,
+        groupCheckInCount
       },
       message: '打卡成功'
     });
   } catch (error) {
+    console.log('error=', error)
     res.status(500).json({
       code: 500,
       message: '服务器错误'
@@ -263,19 +270,27 @@ app.post('/groups', async (req, res) => {
     }
 
     // 验证所有成员是否存在
-    const members = await User.find({ _id: { $in: memberIds } });
-    if (members.length !== memberIds.length) {
+    const allMemberIds = [...memberIds];
+    const members = await User.find({ _id: { $in: allMemberIds } });
+    if (members.length !== allMemberIds.length) {
       return res.status(404).json({
         code: 404,
         message: '部分成员不存在'
       });
     }
 
+    // 处理成员信息，排除密码
+    const formattedMembers = members.map(user => ({
+      _id: user._id,
+      nickname: user.nickname,
+      checkInCount: user.checkInCount
+    }));
+
     // 创建新群组
     const newGroup = new Group({
       name,
       creator: creatorId,
-      members: [...memberIds]  // 包含创建者和所有成员
+      members: formattedMembers
     });
 
     // 保存群组到数据库
@@ -293,6 +308,7 @@ app.post('/groups', async (req, res) => {
       message: '群组创建成功'
     });
   } catch (error) {
+    console.log('error=', error)
     res.status(500).json({
       code: 500,
       message: '服务器错误'
@@ -330,6 +346,88 @@ app.get('/groups/creator/:creatorId', async (req, res) => {
         createdAt: group.createdAt
       })),
       message: '获取群组列表成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义群主转让接口，处理POST请求
+app.post('/groups/:groupId/transferOwner', async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { currentOwnerId, newOwnerId } = req.body;
+
+    // 验证群组是否存在
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        code: 404,
+        message: '群组不存在'
+      });
+    }
+
+    // 验证当前请求者是否为群主
+    if (!group.creator.equals(currentOwnerId)) {
+      return res.status(403).json({
+        code: 403,
+        message: '只有群主可以转让群组所有权'
+      });
+    }
+
+    // 验证新群主是否为群组成员
+    const newOwnerIndex = group.members.findIndex(member => member._id.equals(newOwnerId));
+    if (newOwnerIndex === -1) {
+      return res.status(404).json({
+        code: 404,
+        message: '指定的新群主不是群组成员'
+      });
+    }
+
+    // 转让群主权限
+    group.creator = newOwnerId;
+    await group.save();
+
+    res.status(200).json({
+      code: 200,
+      message: '群主转让成功',
+      data: {
+        groupId: group._id,
+        newCreator: group.creator
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+
+// 定义根据组成员ID搜索所在组的接口，处理GET请求
+app.get('/groups/member/:memberId', async (req, res) => {
+  try {
+    const { memberId } = req.params;
+
+    // 查询该成员所在的所有组
+    const groups = await Group.find({
+      'members._id': memberId
+    });
+
+    res.status(200).json({
+      code: 200,
+      data: groups.map(group => ({
+        id: group._id,
+        name: group.name,
+        creator: group.creator,
+        members: group.members,
+        createdAt: group.createdAt
+      })),
+      message: '获取成员所在组成功'
     });
   } catch (error) {
     res.status(500).json({
@@ -402,7 +500,8 @@ app.post('/groups/:groupId/join', async (req, res) => {
     }
 
     // 检查用户是否已在群组中
-    if (group.members.includes(userId)) {
+    const existingMemberIndex = group.members.findIndex(member => member._id.equals(userId));
+    if (existingMemberIndex !== -1) {
       return res.status(400).json({
         code: 400,
         message: '用户已在群组中'
@@ -410,7 +509,11 @@ app.post('/groups/:groupId/join', async (req, res) => {
     }
 
     // 添加用户到群组成员列表
-    group.members.push(userId);
+    group.members.push({
+      _id: user._id,
+      nickname: user.nickname,
+      checkInCount: user.checkInCount
+    });
     await group.save();
 
     res.status(200).json({
@@ -464,12 +567,11 @@ app.get('/groups/ranking', async (req, res) => {
       .select('name checkInCount members') // 返回名称、打卡次数和成员数
       .populate('members', 'nickname') // 关联查询成员昵称
       .exec();
-
     res.status(200).json({
       code: 200,
       data: groups.map(group => ({
         name: group.name,
-        checkInCount: group.checkInCount,
+        checkInCount: group.members.map(i => i.checkInCount).reduce((acc, curr) => acc + curr, 0),
         memberCount: group.members.length,
         members: group.members.map(member => member.nickname) // 成员昵称列表
       })),
@@ -483,6 +585,178 @@ app.get('/groups/ranking', async (req, res) => {
   }
 });
 
+
+// 定义根据群组id删除群组接口，处理DELETE请求
+app.post('/deleteGroup', async (req, res) => {
+  try {
+    const { userId, groupId } = req.body;
+
+    // 验证群组是否存在
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        code: 404,
+        message: '群组不存在'
+      });
+    }
+
+    // 验证请求者是否为群主
+    if (!group.creator.equals(userId)) {
+      return res.status(403).json({
+        code: 403,
+        message: '只有群主可以删除群组'
+      });
+    }
+
+    // 删除群组
+    await Group.findByIdAndDelete(groupId);
+
+    res.status(200).json({
+      code: 200,
+      message: '群组删除成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义根据群组成员ID删除群组成员接口，处理POST请求
+app.post('/groups/:groupId/removeMember', async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { userId, memberId } = req.body;
+
+    // 验证群组是否存在
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        code: 404,
+        message: '群组不存在'
+      });
+    }
+
+    // 验证请求者是否为群主
+    if (!group.creator.equals(userId)) {
+      return res.status(403).json({
+        code: 403,
+        message: '只有群主可以删除群组成员'
+      });
+    }
+
+    // 检查要删除的成员是否存在于群组中
+    const memberIndex = group.members.findIndex(member => member._id.equals(memberId));
+    if (memberIndex === -1) {
+      return res.status(404).json({
+        code: 404,
+        message: '群组成员不存在'
+      });
+    }
+
+    // 检查要删除的成员是否是群主
+    if (group.creator.equals(memberId)) {
+      // 如果群组还有其他成员，将下一个成员设为新群主
+      if (group.members.length > 1) {
+        const newCreatorIndex = memberIndex === group.members.length - 1 ? 0 : memberIndex + 1;
+        group.creator = group.members[newCreatorIndex]._id;
+      } else {
+        return res.status(400).json({
+          code: 400,
+          message: '群组中只有群主一名成员，无法删除'
+        });
+      }
+    }
+
+    // 删除群组成员
+    group.members.splice(memberIndex, 1);
+    await group.save();
+
+    res.status(200).json({
+      code: 200,
+      message: '群组成员删除成功',
+      data: {
+        groupId: group._id,
+        members: group.members,
+        creator: group.creator
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+
+
+
+// 定义根据用户ID查询未加入群组的接口，处理GET请求
+app.get('/groups/not-joined/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // 查询用户已加入的群组ID
+    const joinedGroups = await Group.find({
+      'members._id': userId
+    }).select('_id');
+
+    const joinedGroupIds = joinedGroups.map(group => group._id);
+
+    // 查询用户未加入的所有群组
+    const notJoinedGroups = await Group.find({
+      _id: { $nin: joinedGroupIds }
+    });
+
+    res.status(200).json({
+      code: 200,
+      data: notJoinedGroups.map(group => ({
+        id: group._id,
+        name: group.name,
+        creator: group.creator,
+        members: group.members,
+        createdAt: group.createdAt
+      })),
+      message: '获取用户未加入的群组成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+
+// 定义查询所有群组接口，处理GET请求
+app.get('/groupList', async (req, res) => {
+  try {
+    // 查询所有群组，按创建时间降序排列
+    const groups = await Group.find({})
+      .sort({ createdAt: -1 })
+      .exec();
+
+    res.status(200).json({
+      code: 200,
+      data: groups.map(group => ({
+        id: group._id,
+        name: group.name,
+        creator: group.creator,
+        members: group.members,
+        createdAt: group.createdAt,
+        checkInCount: group.checkInCount
+      })),
+      message: '获取所有群组成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
 
 // 启动服务器，监听指定端口
 app.listen(port, () => {

@@ -1,0 +1,14 @@
+// ... existing code ...
+
+// 覆盖 AtTabs 组件样式
+.at-tabs {
+  .at-tabs__nav {
+    height: 1rem; // 示例值，根据实际情况调整
+    line-height: 1rem; // 示例值，根据实际情况调整
+  }
+  .at-tabs__nav-item {
+    font-size: 0.32rem; // 示例值，根据实际情况调整
+  }
+}
+
+// ... existing code ...

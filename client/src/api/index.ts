@@ -37,12 +37,57 @@ export function creatGroup(data?: object): Promise<any> {
 }
 
 /**
+ * 删除群组
+ * @param data { name, creatorId, memberIds = [] }
+ * @returns Promise<any> 
+ * */
+export function deleteGroup(data?: object): Promise<any> {
+  return post('/deleteGroup', data)
+}
+
+/**
  * 获取创建者的所有群组
  * @param data {creatorId}
  * @returns 
  */
 export function getGroupList(data?: any): Promise<any> {
     return get('/groups/creator/' + data.creatorId)
+}
+
+/**
+ * 获取创建者的所有群组
+ * @param data {creatorId}
+ * @returns 
+ */
+export function getNotJoinGroupList(data?: any): Promise<any> {
+  return get('/groups/not-joined/' + data.userId)
+}
+
+/**
+ * 删除群成员
+ * @param data {creatorId}
+ * @returns 
+ */
+export function delGroupItem(data?: any): Promise<any> {
+  return post(`/groups/${data.id}/removeMember`, data)
+}
+
+/**
+ * 获取加入的所有群组
+ * @param data {creatorId}
+ * @returns 
+ */
+export function getOwnerGroupList(data?: any): Promise<any> {
+  return get('/groups/member/' + data.creatorId)
+}
+
+/**
+ * 获取加入的所有群组
+ * @param data {creatorId}
+ * @returns 
+ */
+export function groupAll(): Promise<any> {
+  return get('/groupList')
 }
 
 /**
@@ -59,8 +104,8 @@ export function searchGroupByName(data?: object): Promise<any> {
  * @param data { groupId, userId }
  * @returns Promise<any>
  * */
-export function joinGroup(data?: object): Promise<any> {
-    return post('/groups/join', data)
+export function joinGroup(data?: any): Promise<any> {
+    return post(`/groups/${data.id}/join`, data)
 }
 
 /**
