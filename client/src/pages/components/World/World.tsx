@@ -32,7 +32,7 @@ const World: React.FC = () => {
                 <AtList>
                     {groupRankingList.map(i => {
                         return (
-                            <AtListItem title={i.name} extraText={'总打卡：' + i.checkInCount} />
+                          <AtListItem key={ i.name } title={i.name} extraText={'总打卡：' + i.checkInCount} />
                         )
                     })}
                 </AtList>
@@ -46,7 +46,7 @@ const World: React.FC = () => {
                 <AtList>
                     {userRankingList.map(i => {
                         return (
-                            <AtListItem title={i.nickname} extraText={'打卡次数：' + i.checkInCount} />
+                          <AtListItem key={i.nickname} title={i.nickname} extraText={'打卡次数：' + i.checkInCount} />
                         )
                     })}
                 </AtList>
