@@ -9,14 +9,12 @@ const World: React.FC = () => {
     const [groupRankingList, setGroupRankingList] = useState<any[]>([]);
     useEffect(() => {
       userRanking().then(res => {
-          console.error('res=', res)
             if (res.code === 200) {
               setUserRankingList(res.data)
             }
         })
 
       groupRanking().then(res => {
-        console.error('groupRanking=', res)
             if (res.code === 200) {
               setGroupRankingList(res.data)
             }
