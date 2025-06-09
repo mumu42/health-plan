@@ -55,9 +55,9 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
         const { id, nickname } = res.data;
         // 更新用户信息
         dispatch(setUser({ name: nickname, token: 'token值', id}))
+        window.localStorage.setItem('user-info', JSON.stringify({name: nickname, id}))
         setErrorMessage('');
         onClose();
-        console.log(res, 'res===')
       } else {
         setErrorMessage('昵称或密码错误');
       }
@@ -77,14 +77,17 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
           <AtIcon
             value="close"
             size="20"
-            color="#fff"
+            color="#666"
             className="close-button"
             onClick={onClose}
           />
-          {/* 添加图片组件 */}
-          <Image src={loginImage} style={{ width: '100px', height: '100px', margin: '0 calc((100% - 100px) / 2)' }} /> 
-          <AtDivider content="·"  fontColor='#2d8cf0' lineColor='#2d8cf0'/>
-          <AtForm>
+          <Image 
+            src={loginImage} 
+            className="login-logo"
+            mode="aspectFit"
+          />
+          <AtDivider content="·" fontColor='#2d8cf0' lineColor='#2d8cf0'/>
+          <View className="login-form">
             <AtInput
               required
               name="nickname"
@@ -102,9 +105,16 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
               value={formData.password}
               onChange={(value) => handleInputChange({ target: { name: 'password', value } } as React.ChangeEvent<HTMLInputElement>)}
             />
-          </AtForm>
-          {errorMessage && <View style={{ color: 'red' }}>{errorMessage}</View>}
-          <AtButton type='primary' onClick={handleLoginSubmit}>登录/注册</AtButton>
+          </View>
+          {errorMessage && <View className="login-error">{errorMessage}</View>}
+          <View className="login-button">
+            <AtButton 
+              type='primary' 
+              onClick={handleLoginSubmit}
+            >
+              登录/注册
+            </AtButton>
+          </View>
         </View>
       </View>
     </CSSTransition>

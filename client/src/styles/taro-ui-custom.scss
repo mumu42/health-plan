@@ -1,0 +1,567 @@
+// Taro UI 组件响应式样式覆盖
+
+// 基础变量
+$primary-color: #6190E8;
+$font-size-base: 28px;
+$font-size-sm: 24px;
+$font-size-lg: 32px;
+$spacing-base: 20px;
+$border-radius-base: 8px;
+
+// 响应式混入
+@mixin responsive-font($size) {
+  fontSize: $size;
+  @media screen and (max-width: 375px) {
+    fontSize: $size * 0.9;
+  }
+  @media screen and (max-width: 320px) {
+    fontSize: $size * 0.8;
+  }
+}
+
+@mixin responsive-padding($size) {
+  padding: $size;
+  @media screen and (max-width: 375px) {
+    padding: $size * 0.9;
+  }
+  @media screen and (max-width: 320px) {
+    padding: $size * 0.8;
+  }
+}
+
+// AtModal 弹窗组件
+.at-modal {
+  &__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    zIndex: 1000;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  &__container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    maxWidth: 600px;
+    background: #fff;
+    borderRadius: $border-radius-base;
+    overflow: hidden;
+    zIndex: 1001;
+
+    @media screen and (max-width: 375px) {
+      width: 90%;
+    }
+  }
+
+  &__header {
+    padding: $spacing-base;
+    textAlign: center;
+    @include responsive-font($font-size-lg);
+    fontWeight: 500;
+  }
+
+  &__content {
+    padding: $spacing-base;
+    @include responsive-font($font-size-base);
+    lineHeight: 1.5;
+    textAlign: center;
+    wordBreak: break-all;
+  }
+
+  &__footer {
+    display: flex;
+    borderTop: 1px solid #eee;
+
+    &--simple {
+      .at-modal__action {
+        flex: 1;
+      }
+    }
+  }
+
+  &__action {
+    flex: 1;
+    textAlign: center;
+    @include responsive-padding($spacing-base);
+    @include responsive-font($font-size-base);
+    color: $primary-color;
+    borderRight: 1px solid #eee;
+
+    &:last-child {
+      borderRight: none;
+    }
+  }
+}
+
+// AtInput 输入框组件
+.at-input {
+  padding: 0.5rem 0;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #333;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+
+  &::after {
+    display: none;
+  }
+
+  &__title {
+    min-width: 3.5rem;
+    max-width: 4.5rem;
+    font-size: 0.875rem;
+    color: #333;
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__input {
+    font-size: 0.875rem;
+    height: 2rem;
+    line-height: 2rem;
+    flex: 1;
+    width: auto;
+    padding: 0 0.5rem;
+    color: #333;
+
+    &::placeholder {
+      font-size: 0.75rem;
+      color: #999;
+    }
+  }
+
+  &__children {
+    flex-shrink: 0;
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  @media screen and (max-width: 768px) {
+    font-size: 0.8125rem;
+
+    &__title {
+      min-width: 3rem;
+      max-width: 4rem;
+      font-size: 0.8125rem;
+    }
+
+    &__input {
+      font-size: 0.8125rem;
+      height: 1.875rem;
+      line-height: 1.875rem;
+
+      &::placeholder {
+        font-size: 0.6875rem;
+      }
+    }
+
+    &__children {
+      font-size: 0.8125rem;
+    }
+  }
+
+  @media screen and (max-width: 375px) {
+    font-size: 0.75rem;
+
+    &__title {
+      min-width: 2.5rem;
+      max-width: 3.5rem;
+      font-size: 0.75rem;
+    }
+
+    &__input {
+      font-size: 0.75rem;
+      height: 1.75rem;
+      line-height: 1.75rem;
+
+      &::placeholder {
+        font-size: 0.625rem;
+      }
+    }
+
+    &__children {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// AtButton 按钮组件
+.at-button {
+  height: 2.5rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+
+  &--small {
+    height: 2rem;
+    line-height: 2rem;
+    font-size: 0.75rem;
+  }
+}
+
+// AtTabs 标签页组件
+.at-tabs {
+  &__header {
+    @include responsive-font($font-size-base);
+  }
+
+  &__item {
+    padding: $spacing-base $spacing-base * 2;
+    @include responsive-font($font-size-base);
+
+    @media screen and (max-width: 375px) {
+      padding: $spacing-base * 0.8 $spacing-base * 1.5;
+    }
+  }
+
+  &__content {
+    padding: $spacing-base;
+  }
+}
+
+// AtList 列表组件
+.at-list {
+  &__item {
+    padding: 0.75rem 0;
+    font-size: 0.875rem;
+
+    &-thumb {
+      width: 2rem;
+      height: 2rem;
+      margin-right: 0.75rem;
+    }
+
+    &-content {
+      font-size: 0.875rem;
+    }
+
+    &-extra {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+// AtFloatLayout 浮动层组件
+.at-float-layout {
+  &__container {
+    maxHeight: 80vh;
+    borderRadius: $border-radius-base $border-radius-base 0 0;
+  }
+
+  &__header {
+    padding: $spacing-base;
+    @include responsive-font($font-size-lg);
+  }
+
+  &__content {
+    padding: $spacing-base;
+    @include responsive-font($font-size-base);
+  }
+}
+
+// AtMessage 消息提示组件
+.at-message {
+  @include responsive-font($font-size-base);
+  padding: $spacing-base;
+}
+
+// AtToast 轻提示组件
+.at-toast {
+  &__content {
+    @include responsive-font($font-size-base);
+    padding: $spacing-base;
+  }
+}
+
+// AtLoadMore 加载更多组件
+.at-load-more {
+  &__text {
+    @include responsive-font($font-size-base);
+  }
+}
+
+// AtSwiper 轮播组件
+.at-swiper {
+  &__dots {
+    bottom: $spacing-base;
+  }
+
+  &__dots-item {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px;
+
+    @media screen and (max-width: 375px) {
+      width: 12px;
+      height: 12px;
+      margin: 0 6px;
+    }
+  }
+}
+
+// 分割线样式
+.at-divider {
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+  color: #999;
+  height: auto;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+
+  &__content {
+    font-size: 0.875rem;
+    padding: 0 0.5rem;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  &__line {
+    height: 1px;
+    background-color: #eee;
+    flex: 1;
+  }
+
+  &__line--left {
+    margin-right: 0.5rem;
+  }
+
+  &__line--right {
+    margin-left: 0.5rem;
+  }
+
+  @media screen and (max-width: 768px) {
+    margin: 0.625rem 0;
+    font-size: 0.8125rem;
+
+    &__content {
+      font-size: 0.8125rem;
+      padding: 0 0.375rem;
+    }
+
+    &__line--left {
+      margin-right: 0.375rem;
+    }
+
+    &__line--right {
+      margin-left: 0.375rem;
+    }
+  }
+
+  @media screen and (max-width: 375px) {
+    margin: 0.5rem 0;
+    font-size: 0.75rem;
+
+    &__content {
+      font-size: 0.75rem;
+      padding: 0 0.25rem;
+    }
+
+    &__line--left {
+      margin-right: 0.25rem;
+    }
+
+    &__line--right {
+      margin-left: 0.25rem;
+    }
+  }
+}
+
+// 手风琴样式
+.at-accordion {
+  &__header {
+    padding: 0.75rem 0;
+    font-size: 0.875rem;
+  }
+
+  &__arrow {
+    font-size: 0.875rem;
+  }
+
+  &__info {
+    font-size: 0.875rem;
+  }
+
+  &__content {
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+  }
+}
+
+// 表单样式
+.at-form {
+  &__item {
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+  }
+}
+
+// 响应式调整
+@media screen and (max-width: 768px) {
+  .at-input {
+    font-size: 0.8125rem;
+
+    &__title {
+      font-size: 0.8125rem;
+    }
+
+    &__input {
+      font-size: 0.8125rem;
+    }
+
+    &__children {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .at-divider {
+    font-size: 0.8125rem;
+
+    &__content {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .at-accordion {
+    &__header {
+      font-size: 0.8125rem;
+    }
+
+    &__arrow {
+      font-size: 0.8125rem;
+    }
+
+    &__info {
+      font-size: 0.8125rem;
+    }
+
+    &__content {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .at-button {
+    font-size: 0.8125rem;
+
+    &--small {
+      font-size: 0.75rem;
+    }
+  }
+
+  .at-list {
+    &__item {
+      font-size: 0.8125rem;
+
+      &-content {
+        font-size: 0.8125rem;
+      }
+
+      &-extra {
+        font-size: 0.8125rem;
+      }
+    }
+  }
+
+  .at-form {
+    &__item {
+      font-size: 0.8125rem;
+    }
+
+    &__label {
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+@media screen and (max-width: 375px) {
+  .at-input {
+    font-size: 0.75rem;
+
+    &__title {
+      font-size: 0.75rem;
+    }
+
+    &__input {
+      font-size: 0.75rem;
+    }
+
+    &__children {
+      font-size: 0.75rem;
+    }
+  }
+
+  .at-divider {
+    font-size: 0.75rem;
+
+    &__content {
+      font-size: 0.75rem;
+    }
+  }
+
+  .at-accordion {
+    &__header {
+      font-size: 0.75rem;
+    }
+
+    &__arrow {
+      font-size: 0.75rem;
+    }
+
+    &__info {
+      font-size: 0.75rem;
+    }
+
+    &__content {
+      font-size: 0.75rem;
+    }
+  }
+
+  .at-button {
+    font-size: 0.75rem;
+
+    &--small {
+      font-size: 0.6875rem;
+    }
+  }
+
+  .at-list {
+    &__item {
+      font-size: 0.75rem;
+
+      &-content {
+        font-size: 0.75rem;
+      }
+
+      &-extra {
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .at-form {
+    &__item {
+      font-size: 0.75rem;
+    }
+
+    &__label {
+      font-size: 0.75rem;
+    }
+  }
+} 
