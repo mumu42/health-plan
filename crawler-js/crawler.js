@@ -693,9 +693,10 @@ async function main() {
     try {
         // 初始化爬虫
         const crawlers = [
-            // new ToutiaoCrawler(),  // 暂时关闭头条爬虫
-            new DouyinCrawler(),
-            new KuaishouCrawler()
+            new WeiboCrawler(),    // 重新启用微博爬虫
+            // new ToutiaoCrawler(),
+            // new DouyinCrawler(),
+            // new KuaishouCrawler()
         ];
 
         // 获取所有平台的热搜话题

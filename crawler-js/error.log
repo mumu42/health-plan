@@ -114,3 +114,4 @@
 {"level":"error","message":"关闭浏览器错误: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-39FywO\\Default\\chrome_debug.log'","timestamp":"2025-06-11T10:24:30.314Z"}
 {"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 60000 ms exceeded","timestamp":"2025-06-11T10:28:08.337Z"}
 {"level":"error","message":"获取快手热搜话题错误: 未找到快手热搜列表元素","timestamp":"2025-06-11T10:28:08.395Z"}
+{"level":"error","message":"未找到微博热搜列表元素","timestamp":"2025-06-11T10:34:49.260Z"}
