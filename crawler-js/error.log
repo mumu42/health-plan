@@ -1,0 +1,116 @@
+{"level":"error","message":"Error fetching Zhihu hot topics: Failed to launch the browser process! spawn C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe ENOENT\n\n\nTROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md\n","timestamp":"2025-06-11T08:39:51.812Z"}
+{"level":"error","message":"Error parsing Toutiao hot topics: \"[object Object]\" is not valid JSON","timestamp":"2025-06-11T08:39:51.891Z"}
+{"level":"error","message":"Error fetching Douyin hot topics: Failed to launch the browser process! spawn C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe ENOENT\n\n\nTROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md\n","timestamp":"2025-06-11T08:39:51.896Z"}
+{"level":"error","message":"Error fetching Kuaishou hot topics: Failed to launch the browser process! spawn C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe ENOENT\n\n\nTROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md\n","timestamp":"2025-06-11T08:39:51.900Z"}
+{"level":"error","message":"Error fetching Zhihu hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-TK2Upe\\Default\\chrome_debug.log'","timestamp":"2025-06-11T08:45:36.542Z"}
+{"level":"error","message":"Error fetching Douyin hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-wIaU3D\\Default\\chrome_debug.log'","timestamp":"2025-06-11T08:46:02.684Z"}
+{"level":"error","message":"Error fetching Zhihu hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-LQV89g\\Default\\chrome_debug.log'","timestamp":"2025-06-11T08:48:23.062Z"}
+{"level":"error","message":"Error fetching Douyin hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-99zsHX\\Default\\chrome_debug.log'","timestamp":"2025-06-11T08:54:38.086Z"}
+{"level":"error","message":"Error fetching Kuaishou hot topics: Timed out after 30000 ms while trying to connect to the browser! Only Chrome at revision r901912 is guaranteed to work.","timestamp":"2025-06-11T08:55:12.943Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T08:55:12.969Z"}
+{"level":"error","message":"Error fetching Zhihu hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-e7qnEC\\Default\\chrome_debug.log'","timestamp":"2025-06-11T09:08:44.520Z"}
+{"level":"error","message":"Error fetching Douyin hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-lkZD5c\\Default\\chrome_debug.log'","timestamp":"2025-06-11T09:09:08.319Z"}
+{"level":"error","message":"Error fetching Kuaishou hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-9tvfZr\\Default\\chrome_debug.log'","timestamp":"2025-06-11T09:09:25.147Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:09:25.150Z"}
+{"level":"error","message":"Error fetching Zhihu hot topics: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-HLuEMc\\Default\\chrome_debug.log'","timestamp":"2025-06-11T09:12:25.915Z"}
+{"level":"error","message":"获取快手热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:19:15.394Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:20:29.884Z"}
+{"level":"error","message":"未找到知乎热搜列表元素","timestamp":"2025-06-11T09:20:59.479Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:20:59.481Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:21:27.283Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:21:27.285Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:21:44.105Z"}
+{"level":"error","message":"获取快手热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:21:44.107Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:21:47.234Z"}
+{"level":"error","message":"未找到知乎热搜列表元素","timestamp":"2025-06-11T09:22:49.122Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:22:49.125Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:23:08.031Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:23:08.033Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:23:23.722Z"}
+{"level":"error","message":"获取快手热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:23:23.724Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:23:26.840Z"}
+{"level":"error","message":"未找到知乎热搜列表元素","timestamp":"2025-06-11T09:24:00.469Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:24:00.471Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:24:35.989Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:24:51.674Z"}
+{"level":"error","message":"获取快手热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:24:51.676Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:24:54.816Z"}
+{"level":"error","message":"未找到知乎热搜列表元素","timestamp":"2025-06-11T09:25:56.258Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:25:56.262Z"}
+{"level":"error","message":"Main process error: Assignment to constant variable.","timestamp":"2025-06-11T09:26:03.308Z"}
+{"level":"error","message":"Main process error: Assignment to constant variable.","timestamp":"2025-06-11T09:26:22.390Z"}
+{"level":"error","message":"获取微博热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:28:23.365Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:28:56.750Z"}
+{"level":"error","message":"未找到知乎热搜列表元素","timestamp":"2025-06-11T09:30:00.891Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:30:00.893Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:30:25.165Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:30:25.167Z"}
+{"level":"error","message":"获取快手热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:30:58.582Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:34:34.548Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:35:10.097Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:35:29.127Z"}
+{"level":"error","message":"获取快手热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:35:29.131Z"}
+{"level":"error","message":"未找到知乎热搜列表元素","timestamp":"2025-06-11T09:38:59.239Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:39:19.578Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:39:19.581Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:39:37.623Z"}
+{"level":"error","message":"获取知乎热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:41:03.932Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:41:25.393Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:41:25.395Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:41:41.056Z"}
+{"level":"error","message":"未找到微博热搜列表元素","timestamp":"2025-06-11T09:42:36.875Z"}
+{"level":"error","message":"头条响应格式不正确","timestamp":"2025-06-11T09:44:54.747Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:45:27.101Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:45:42.986Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:45:49.136Z"}
+{"level":"error","message":"头条响应格式不正确","timestamp":"2025-06-11T09:46:36.896Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:47:09.258Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:47:26.762Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:47:32.942Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:55:45.196Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:55:45.199Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:56:00.952Z"}
+{"level":"error","message":"头条响应格式不正确","timestamp":"2025-06-11T09:56:29.080Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:56:44.643Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:56:44.647Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:57:01.123Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:57:07.386Z"}
+{"level":"error","message":"头条响应格式不正确","timestamp":"2025-06-11T09:57:19.650Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:57:52.337Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T09:58:08.459Z"}
+{"level":"error","message":"No data was collected from any platform","timestamp":"2025-06-11T09:58:14.763Z"}
+{"level":"error","message":"头条响应格式不正确","timestamp":"2025-06-11T09:58:32.210Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T09:58:54.270Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T09:58:54.272Z"}
+{"level":"error","message":"头条响应格式不正确","timestamp":"2025-06-11T09:59:13.628Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T09:59:46.378Z"}
+{"level":"error","message":"未找到快手热搜列表元素","timestamp":"2025-06-11T10:03:07.903Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T10:03:25.587Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:03:26.789Z"}
+{"level":"error","message":"获取快手热搜话题错误: Could not find expected browser (chrome) locally. Run `npm install` to download the correct Chromium revision (901912).","timestamp":"2025-06-11T10:04:06.077Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T10:04:19.395Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T10:04:19.397Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:04:20.500Z"}
+{"level":"error","message":"获取快手热搜话题错误: this.getRandomUserAgent is not a function","timestamp":"2025-06-11T10:07:22.884Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T10:07:41.030Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T10:07:41.033Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:07:42.213Z"}
+{"level":"error","message":"获取快手热搜话题错误: Failed to launch the browser process! spawn C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe ENOENT\n\n\nTROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md\n","timestamp":"2025-06-11T10:07:52.257Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T10:08:22.532Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:08:23.697Z"}
+{"level":"error","message":"获取快手热搜话题错误: this.getRandomUserAgent is not a function","timestamp":"2025-06-11T10:10:43.187Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T10:11:13.135Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:11:14.402Z"}
+{"level":"error","message":"获取快手热搜话题错误: this.getRandomUserAgent is not a function","timestamp":"2025-06-11T10:19:35.055Z"}
+{"level":"error","message":"未找到抖音热搜列表元素","timestamp":"2025-06-11T10:19:55.238Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Evaluation failed: ReferenceError: logger is not defined\n    at __puppeteer_evaluation_script__:3:17","timestamp":"2025-06-11T10:19:55.241Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:19:56.420Z"}
+{"level":"error","message":"获取抖音热搜话题错误: this.getRandomUserAgent is not a function","timestamp":"2025-06-11T10:22:40.884Z"}
+{"level":"error","message":"获取快手热搜话题错误: this.getRandomUserAgent is not a function","timestamp":"2025-06-11T10:22:40.903Z"}
+{"level":"error","message":"Main process error: topics.forEach is not a function","timestamp":"2025-06-11T10:22:40.957Z"}
+{"level":"error","message":"获取快手热搜话题错误: 未找到快手热搜列表元素","timestamp":"2025-06-11T10:23:43.802Z"}
+{"level":"error","message":"关闭浏览器错误: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-CzTrdc\\Default\\chrome_debug.log'","timestamp":"2025-06-11T10:23:57.004Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 30000 ms exceeded","timestamp":"2025-06-11T10:24:05.755Z"}
+{"level":"error","message":"关闭浏览器错误: EBUSY: resource busy or locked, unlink 'C:\\Users\\HUANG~1.GUI\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-39FywO\\Default\\chrome_debug.log'","timestamp":"2025-06-11T10:24:30.314Z"}
+{"level":"error","message":"获取抖音热搜话题错误: Navigation timeout of 60000 ms exceeded","timestamp":"2025-06-11T10:28:08.337Z"}
+{"level":"error","message":"获取快手热搜话题错误: 未找到快手热搜列表元素","timestamp":"2025-06-11T10:28:08.395Z"}

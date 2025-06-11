@@ -4,14 +4,18 @@
   "description": "A crawler for hot topics from various social media platforms",
   "main": "crawler.js",
   "scripts": {
-    "start": "node crawler.js"
+    "start": "node crawler.js",
+    "postinstall": "set PUPPETEER_SKIP_DOWNLOAD=true"
   },
   "dependencies": {
-    "axios": "^1.6.2",
-    "cheerio": "^1.0.0-rc.12",
-    "puppeteer": "^21.5.2",
-    "exceljs": "^4.4.0",
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.10",
+    "puppeteer-core": "^10.4.0",
+    "exceljs": "^4.2.1",
     "random-useragent": "^0.5.0",
-    "winston": "^3.11.0"
+    "winston": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=12.0.0"
   }
 } 

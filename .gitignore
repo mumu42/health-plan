@@ -5,6 +5,7 @@ deploy_versions/
 node_modules/
 client/node_modules/
 server/node_modules/
+crawler-js/node_modules/
 .DS_Store
 .swc
 *.local
