@@ -1,0 +1,17 @@
+{
+  "name": "social-media-hot-topics-crawler",
+  "version": "1.0.0",
+  "description": "A crawler for hot topics from various social media platforms",
+  "main": "crawler.js",
+  "scripts": {
+    "start": "node crawler.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
+    "puppeteer": "^21.5.2",
+    "exceljs": "^4.4.0",
+    "random-useragent": "^0.5.0",
+    "winston": "^3.11.0"
+  }
+} 
