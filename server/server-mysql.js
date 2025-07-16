@@ -10,15 +10,73 @@ const app = express();
 // 设置服务器端口号为3001
 const port = 3001;
 
-// 使用CORS中间件，允许跨域请求
-app.use(cors());
+// 使用CORS中间件，允许跨域请求 - 针对宝塔面板部署优化
+app.use(cors({
+  origin: function (origin, callback) {
+    // 允许没有origin的请求（比如移动端应用、小程序等）
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      // 本地开发环境
+      'http://localhost:3000',
+      'http://127.0.0.1:3000', 
+      'http://localhost:8080',
+      'http://127.0.0.1:8080',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
+      // 阿里云服务器
+      'http://47.107.184.99:3000',
+      'http://47.107.184.99:3001',
+      'http://47.107.184.99',
+      'https://47.107.184.99',
+      // 域名访问（如果有域名的话）
+      'http://47.107.184.99:80',
+      'http://47.107.184.99:443',
+      'https://47.107.184.99:80',
+      'https://47.107.184.99:443'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS request from origin:', origin);
+      // 生产环境允许所有origin，但记录日志
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Forwarded-For', 'X-Real-IP'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+  maxAge: 86400 // 预检请求缓存24小时
+}));
+
+// 处理预检请求
+app.options('*', cors());
+
+// 添加额外的CORS头部中间件
+app.use((req, res, next) => {
+  // 设置CORS头部
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For, X-Real-IP');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  // 处理预检请求
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // 创建MySQL连接池
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'your_password',
-  database: 'healthdatabase',
+  password: 'root_hgz0521', // m5WnPB6SecKPDk5h
+  database: 'health',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -53,7 +111,7 @@ async function initializeDatabase() {
 
     // 创建群组表
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS groups (
+      CREATE TABLE IF NOT EXISTS \`groups\` (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL UNIQUE,
         creatorId INT,
@@ -69,7 +127,7 @@ async function initializeDatabase() {
         groupId INT,
         userId INT,
         PRIMARY KEY (groupId, userId),
-        FOREIGN KEY (groupId) REFERENCES groups(id),
+        FOREIGN KEY (groupId) REFERENCES \`groups\`(id),
         FOREIGN KEY (userId) REFERENCES users(id)
       )
     `);
@@ -88,7 +146,46 @@ app.use(express.json());
 
 // 定义一个简单的测试路由，返回"Hello World!"
 app.get('/test', (req, res) => {
-  res.send('Hello World!');
+  res.json({
+    message: 'Hello World!',
+    timestamp: new Date().toISOString(),
+    cors: 'CORS is working!'
+  });
+});
+
+// 添加CORS测试路由
+app.get('/cors-test', (req, res) => {
+  res.json({
+    message: 'CORS test successful',
+    origin: req.headers.origin,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+    headers: req.headers,
+    server: 'Baota Panel Deployed Server'
+  });
+});
+
+// 添加详细的CORS调试路由
+app.get('/cors-debug', (req, res) => {
+  console.log('CORS Debug Request:', {
+    origin: req.headers.origin,
+    method: req.method,
+    headers: req.headers,
+    url: req.url,
+    timestamp: new Date().toISOString()
+  });
+  
+  res.json({
+    status: 'success',
+    message: 'CORS debug information logged',
+    requestInfo: {
+      origin: req.headers.origin,
+      method: req.method,
+      userAgent: req.headers['user-agent'],
+      accept: req.headers.accept,
+      timestamp: new Date().toISOString()
+    }
+  });
 });
 
 // 定义登录接口，处理POST请求
@@ -163,6 +260,15 @@ app.post('/checkin', async (req, res) => {
       });
     }
 
+    // 处理groupId参数，确保是有效的整数或null
+    let processedGroupId = null;
+    if (groupId !== null && groupId !== undefined && groupId !== '') {
+      const parsedGroupId = parseInt(groupId);
+      if (!isNaN(parsedGroupId)) {
+        processedGroupId = parsedGroupId;
+      }
+    }
+
     // 获取今天的开始和结束时间
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -189,7 +295,7 @@ app.post('/checkin', async (req, res) => {
     // 创建打卡记录
     const [checkResult] = await pool.query(
       'INSERT INTO checks (userId, groupId, status, notes) VALUES (?, ?, ?, ?)',
-      [userId, groupId, status, notes]
+      [userId, processedGroupId, status, notes]
     );
 
     // 根据打卡状态决定累加值
@@ -202,25 +308,30 @@ app.post('/checkin', async (req, res) => {
     );
     
     // 更新群组打卡次数
-    if (groupId) {
+    if (processedGroupId) {
       await pool.query(
-        'UPDATE groups SET checkInCount = checkInCount + ? WHERE id = ?',
-        [incrementValue, groupId]
+        'UPDATE `groups` SET checkInCount = checkInCount + ? WHERE id = ?',
+        [incrementValue, processedGroupId]
       );
     }
 
     // 获取更新后的数据
     const [updatedUser] = await pool.query('SELECT checkInCount FROM users WHERE id = ?', [userId]);
-    const [updatedGroup] = groupId ? 
-      await pool.query('SELECT checkInCount FROM groups WHERE id = ?', [groupId]) : 
-      [{ checkInCount: null }];
+    let updatedGroup = [{ checkInCount: null }];
+    
+    if (processedGroupId) {
+      const [groupResult] = await pool.query('SELECT checkInCount FROM `groups` WHERE id = ?', [processedGroupId]);
+      if (groupResult.length > 0) {
+        updatedGroup = groupResult;
+      }
+    }
 
     res.status(200).json({
       code: 200,
       data: {
         checkId: checkResult.insertId,
         userId,
-        groupId,
+        groupId: processedGroupId,
         date: new Date(),
         status,
         userCheckInCount: updatedUser[0].checkInCount,
@@ -291,7 +402,7 @@ app.post('/groups', async (req, res) => {
     }
 
     // 验证群组名称是否已存在
-    const [existingGroups] = await pool.query('SELECT * FROM groups WHERE name = ?', [name]);
+    const [existingGroups] = await pool.query('SELECT * FROM `groups` WHERE name = ?', [name]);
     if (existingGroups.length > 0) {
       return res.status(400).json({
         code: 400,
@@ -306,7 +417,7 @@ app.post('/groups', async (req, res) => {
     try {
       // 创建新群组
       const [groupResult] = await connection.query(
-        'INSERT INTO groups (name, creatorId) VALUES (?, ?)',
+        'INSERT INTO `groups` (name, creatorId) VALUES (?, ?)',
         [name, creatorId]
       );
       const groupId = groupResult.insertId;
@@ -317,12 +428,24 @@ app.post('/groups', async (req, res) => {
         [groupId, creatorId]
       );
 
-      // 添加其他成员
-      for (const memberId of memberIds) {
-        await connection.query(
-          'INSERT INTO group_members (groupId, userId) VALUES (?, ?)',
+      // 添加其他成员，跳过创建者自己并去重
+      const uniqueMemberIds = [...new Set(memberIds)].filter(id => 
+        id !== creatorId && id != null && id !== undefined
+      );
+      
+      for (const memberId of uniqueMemberIds) {
+        // 检查是否已经是成员，避免重复插入
+        const [existingMember] = await connection.query(
+          'SELECT * FROM group_members WHERE groupId = ? AND userId = ?',
           [groupId, memberId]
         );
+        
+        if (existingMember.length === 0) {
+          await connection.query(
+            'INSERT INTO group_members (groupId, userId) VALUES (?, ?)',
+            [groupId, memberId]
+          );
+        }
       }
 
       // 提交事务
@@ -334,7 +457,7 @@ app.post('/groups', async (req, res) => {
          GROUP_CONCAT(u.id) as memberIds,
          GROUP_CONCAT(u.nickname) as memberNicknames,
          GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-         FROM groups g
+         FROM \`groups\` g
          LEFT JOIN group_members gm ON g.id = gm.groupId
          LEFT JOIN users u ON gm.userId = u.id
          WHERE g.id = ?
@@ -395,7 +518,7 @@ app.get('/groups/creator/:creatorId', async (req, res) => {
        GROUP_CONCAT(u.id) as memberIds,
        GROUP_CONCAT(u.nickname) as memberNicknames,
        GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN users u ON gm.userId = u.id
        WHERE g.creatorId = ?
@@ -437,7 +560,7 @@ app.post('/groups/:groupId/transferOwner', async (req, res) => {
     const { currentOwnerId, newOwnerId } = req.body;
 
     // 验证群组是否存在
-    const [groups] = await pool.query('SELECT * FROM groups WHERE id = ?', [groupId]);
+    const [groups] = await pool.query('SELECT * FROM `groups` WHERE id = ?', [groupId]);
     if (groups.length === 0) {
       return res.status(404).json({
         code: 404,
@@ -467,7 +590,7 @@ app.post('/groups/:groupId/transferOwner', async (req, res) => {
 
     // 转让群主权限
     await pool.query(
-      'UPDATE groups SET creatorId = ? WHERE id = ?',
+      'UPDATE `groups` SET creatorId = ? WHERE id = ?',
       [newOwnerId, groupId]
     );
 
@@ -499,7 +622,7 @@ app.get('/groups/member/:memberId', async (req, res) => {
        GROUP_CONCAT(u.id) as memberIds,
        GROUP_CONCAT(u.nickname) as memberNicknames,
        GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-       FROM groups g
+       FROM \`groups\` g
        JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN group_members gm2 ON g.id = gm2.groupId
        LEFT JOIN users u ON gm2.userId = u.id
@@ -549,7 +672,7 @@ app.get('/groups/search', async (req, res) => {
     // 使用LIKE进行模糊搜索
     const [groups] = await pool.query(
       `SELECT g.*, COUNT(gm.userId) as memberCount
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        WHERE g.name LIKE ?
        GROUP BY g.id
@@ -593,7 +716,7 @@ app.post('/groups/:groupId/join', async (req, res) => {
     }
 
     // 验证群组是否存在
-    const [groups] = await pool.query('SELECT * FROM groups WHERE id = ?', [groupId]);
+    const [groups] = await pool.query('SELECT * FROM `groups` WHERE id = ?', [groupId]);
     if (groups.length === 0) {
       return res.status(404).json({
         code: 404,
@@ -625,7 +748,7 @@ app.post('/groups/:groupId/join', async (req, res) => {
        GROUP_CONCAT(u.id) as memberIds,
        GROUP_CONCAT(u.nickname) as memberNicknames,
        GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN users u ON gm.userId = u.id
        WHERE g.id = ?
@@ -687,7 +810,7 @@ app.get('/groups/ranking', async (req, res) => {
       `SELECT g.*, 
        GROUP_CONCAT(u.nickname) as memberNicknames,
        COUNT(gm.userId) as memberCount
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN users u ON gm.userId = u.id
        GROUP BY g.id
@@ -719,7 +842,7 @@ app.post('/deleteGroup', async (req, res) => {
     const { userId, groupId } = req.body;
 
     // 验证群组是否存在
-    const [groups] = await pool.query('SELECT * FROM groups WHERE id = ?', [groupId]);
+    const [groups] = await pool.query('SELECT * FROM `groups` WHERE id = ?', [groupId]);
     if (groups.length === 0) {
       return res.status(404).json({
         code: 404,
@@ -743,7 +866,7 @@ app.post('/deleteGroup', async (req, res) => {
       // 删除群组成员关系
       await connection.query('DELETE FROM group_members WHERE groupId = ?', [groupId]);
       // 删除群组
-      await connection.query('DELETE FROM groups WHERE id = ?', [groupId]);
+      await connection.query('DELETE FROM `groups` WHERE id = ?', [groupId]);
       // 提交事务
       await connection.commit();
 
@@ -774,7 +897,7 @@ app.post('/groups/:groupId/removeMember', async (req, res) => {
     const { userId, memberId } = req.body;
 
     // 验证群组是否存在
-    const [groups] = await pool.query('SELECT * FROM groups WHERE id = ?', [groupId]);
+    const [groups] = await pool.query('SELECT * FROM `groups` WHERE id = ?', [groupId]);
     if (groups.length === 0) {
       return res.status(404).json({
         code: 404,
@@ -791,7 +914,7 @@ app.post('/groups/:groupId/removeMember', async (req, res) => {
     }
 
     // 检查要删除的成员是否存在于群组中
-    const [members] = await pool.query(
+    const [ members ] = await pool.query(
       'SELECT * FROM group_members WHERE groupId = ? AND userId = ?',
       [groupId, memberId]
     );
@@ -819,7 +942,7 @@ app.post('/groups/:groupId/removeMember', async (req, res) => {
 
       // 将下一个成员设为新群主
       await pool.query(
-        'UPDATE groups SET creatorId = ? WHERE id = ?',
+        'UPDATE `groups` SET creatorId = ? WHERE id = ?',
         [otherMembers[0].userId, groupId]
       );
     }
@@ -836,7 +959,7 @@ app.post('/groups/:groupId/removeMember', async (req, res) => {
        GROUP_CONCAT(u.id) as memberIds,
        GROUP_CONCAT(u.nickname) as memberNicknames,
        GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN users u ON gm.userId = u.id
        WHERE g.id = ?
@@ -844,7 +967,7 @@ app.post('/groups/:groupId/removeMember', async (req, res) => {
       [groupId]
     );
 
-    const members = updatedGroup[0].memberIds ? updatedGroup[0].memberIds.split(',').map((id, index) => ({
+    const members1 = updatedGroup[0].memberIds ? updatedGroup[0].memberIds.split(',').map((id, index) => ({
       _id: parseInt(id),
       nickname: updatedGroup[0].memberNicknames.split(',')[index],
       checkInCount: parseInt(updatedGroup[0].memberCheckInCounts.split(',')[index])
@@ -855,7 +978,7 @@ app.post('/groups/:groupId/removeMember', async (req, res) => {
       message: '群组成员删除成功',
       data: {
         groupId: parseInt(groupId),
-        members,
+        members: members1,
         creator: updatedGroup[0].creatorId
       }
     });
@@ -879,7 +1002,7 @@ app.get('/groups/not-joined/:userId', async (req, res) => {
        GROUP_CONCAT(u.id) as memberIds,
        GROUP_CONCAT(u.nickname) as memberNicknames,
        GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN users u ON gm.userId = u.id
        WHERE g.id NOT IN (
@@ -924,7 +1047,7 @@ app.get('/groupList', async (req, res) => {
        GROUP_CONCAT(u.id) as memberIds,
        GROUP_CONCAT(u.nickname) as memberNicknames,
        GROUP_CONCAT(u.checkInCount) as memberCheckInCounts
-       FROM groups g
+       FROM \`groups\` g
        LEFT JOIN group_members gm ON g.id = gm.groupId
        LEFT JOIN users u ON gm.userId = u.id
        GROUP BY g.id

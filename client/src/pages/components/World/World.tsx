@@ -26,13 +26,17 @@ const World: React.FC = () => {
                 title="组排名"
                 open={activePanel === 'group'}
                 onClick={() => setActivePanel(activePanel === 'group' ? '' : 'group')}
-            >
+                >
                 <AtList>
                     {groupRankingList.map(i => {
                         return (
                           <AtListItem key={ i.name } title={i.name} extraText={'总打卡：' + i.checkInCount} />
                         )
                     })}
+                    {groupRankingList.length === 0 ?
+                      <View className='at-article__p'>
+                        还未有人创建组群，快去邀请的小伙伴一起创建组群打卡吧！
+                      </View> : <></>}
                 </AtList>
             </AtAccordion>
 
@@ -47,6 +51,10 @@ const World: React.FC = () => {
                           <AtListItem key={i.nickname} title={i.nickname} extraText={'打卡次数：' + i.checkInCount} />
                         )
                     })}
+                    {userRankingList.length === 0 ?
+                      <View className='at-article__p'>
+                        还未有人打卡，快去打卡吧！
+                      </View> : <></>}
                 </AtList>
             </AtAccordion>
         </View>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Image, Text } from '@tarojs/components';
-import { AtAccordion, AtList, AtListItem, AtForm, AtInput, AtButton, AtToast, AtFloatLayout, AtAvatar } from 'taro-ui';
+import { AtAccordion, AtListItem, AtForm, AtInput, AtButton, AtToast, AtFloatLayout, AtMessage } from 'taro-ui';
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
 import { creatGroup, getOwnerGroupList, delGroupItem, deleteGroup, getNotJoinGroupList, groupAll, joinGroup } from '@/api/index'
@@ -40,6 +40,11 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ onAuthRequired }) => {
       } else {
         setError('创建失败');
       }
+    }).catch(err => {
+      Taro.atMessage({
+        'message': err.message || '失败！',
+        'type': 'error',
+      })
     })
   };
 
@@ -187,6 +192,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ onAuthRequired }) => {
 
   return (
     <View className="create-group-container" style={styles}>
+      <AtMessage />
       <AtAccordion
         title="创建新组"
         open={activePanel === 'create'}

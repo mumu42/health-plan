@@ -1,10 +1,11 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import Taro from '@tarojs/taro';
+import config from '@/config/env';
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: 'http://192.168.0.195:3001', // 替换为实际API地址
-  timeout: 10000, // 请求超时时间
+  baseURL: config.baseURL,
+  timeout: config.timeout,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }
@@ -29,11 +30,7 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse) => {
     // 在这里处理响应数据
-    if (response.status === 200) {
       return response.data;
-    } else {
-      return Promise.reject(response);
-    }
   },
   (error) => {
     // 在这里处理错误
@@ -41,7 +38,7 @@ service.interceptors.response.use(
       title: '网络请求失败',
       icon: 'none'
     });
-    return Promise.reject(error);
+    return Promise.reject(error?.response?.data || {message: 'message~'});
   }
 );
 

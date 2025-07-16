@@ -4,6 +4,8 @@ import './CheckIn.scss';
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
 import { checkIn } from '@/api/index'
+import Taro from '@tarojs/taro'
+import { AtMessage } from 'taro-ui'
 
 type CheckInProps = {
   onCheckInRequest?: () => void;  // 新增props用于通知父组件
@@ -40,8 +42,16 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
         localStorage.setItem('checkInTime', timeString);
         setCheckInDate(timeString);
       } else {
-        
+        Taro.atMessage({
+          'message': res.message,
+          'type': 'error',
+        })
       }
+    }).catch(err => {
+      Taro.atMessage({
+        'message': err.message || '失败！',
+        'type': 'error',
+      })
     })
   };
 
@@ -55,6 +65,7 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
       ) : (
         <Button onClick={handleCheckIn}>立即打卡</Button>
       )}
+      <AtMessage />
     </View>
   );
 };

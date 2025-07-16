@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS 测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CORS 跨域测试页面</h1>
+        <p>这个页面用于测试服务器端的CORS配置是否正确。</p>
+        
+        <div class="test-section">
+            <h3>1. 基础连接测试</h3>
+            <button onclick="testBasicConnection()">测试基础连接</button>
+            <div id="basic-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. CORS 测试</h3>
+            <button onclick="testCORS()">测试CORS配置</button>
+            <div id="cors-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. CORS 调试信息</h3>
+            <button onclick="testCorsDebug()">获取调试信息</button>
+            <div id="debug-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 登录接口测试</h3>
+            <button onclick="testLogin()">测试登录接口</button>
+            <div id="login-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 预检请求测试</h3>
+            <button onclick="testPreflight()">测试预检请求</button>
+            <div id="preflight-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://47.107.184.99:3001';
+        
+        function showResult(elementId, data, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `result ${type}`;
+        }
+
+        async function testBasicConnection() {
+            try {
+                const response = await fetch(`${SERVER_URL}/test`);
+                const data = await response.json();
+                showResult('basic-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data,
+                    headers: Object.fromEntries(response.headers.entries())
+                }, 'success');
+            } catch (error) {
+                showResult('basic-result', {
+                    error: error.message,
+                    type: error.name
+                }, 'error');
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${SERVER_URL}/cors-test`);
+                const data = await response.json();
+                showResult('cors-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data,
+                    corsHeaders: {
+                        'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                        'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                        'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                    }
+                }, 'success');
+            } catch (error) {
+                showResult('cors-result', {
+                    error: error.message,
+                    type: error.name
+                }, 'error');
+            }
+        }
+
+        async function testCorsDebug() {
+            try {
+                const response = await fetch(`${SERVER_URL}/cors-debug`);
+                const data = await response.json();
+                showResult('debug-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, 'success');
+            } catch (error) {
+                showResult('debug-result', {
+                    error: error.message,
+                    type: error.name
+                }, 'error');
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${SERVER_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nickname: 'testuser',
+                        password: 'testpass'
+                    })
+                });
+                const data = await response.json();
+                showResult('login-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, 'success');
+            } catch (error) {
+                showResult('login-result', {
+                    error: error.message,
+                    type: error.name
+                }, 'error');
+            }
+        }
+
+        async function testPreflight() {
+            try {
+                const response = await fetch(`${SERVER_URL}/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                showResult('preflight-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                }, 'success');
+            } catch (error) {
+                showResult('preflight-result', {
+                    error: error.message,
+                    type: error.name
+                }, 'error');
+            }
+        }
+
+        // 页面加载时显示当前页面信息
+        window.onload = function() {
+            console.log('当前页面信息:', {
+                origin: window.location.origin,
+                hostname: window.location.hostname,
+                protocol: window.location.protocol,
+                port: window.location.port
+            });
+        };
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS 测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS 跨域测试页面</h1>
+    
+    <div class="test-section">
+        <h3>测试服务器连接</h3>
+        <button onclick="testConnection()">测试连接</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试CORS配置</h3>
+        <button onclick="testCORS()">测试CORS</button>
+        <div id="cors-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试登录接口</h3>
+        <button onclick="testLogin()">测试登录</button>
+        <div id="login-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/test`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ 连接成功</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 连接失败</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('cors-result');
+            resultDiv.innerHTML = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/cors-test`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ CORS测试成功</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ CORS测试失败</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.innerHTML = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nickname: 'testuser',
+                        password: 'testpass'
+                    })
+                });
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ 登录接口测试成功</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 登录接口测试失败</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 
+ 
