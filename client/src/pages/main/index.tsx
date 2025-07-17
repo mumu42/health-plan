@@ -25,7 +25,7 @@ const Index: React.FC = () => {
   const user = useSelector((state: RootState) => state.user)
   const dispatch = useDispatch<AppDispatch>()
 
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(!user.name)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   const handleTabChange = (index: number) => {
     const tabKey = tabs[index].key
@@ -34,7 +34,7 @@ const Index: React.FC = () => {
 
   const closeLoginModal = () => setIsLoginModalOpen(false)
   const openLoginModal = () => {
-    setIsLoginModalOpen(true)
+      setIsLoginModalOpen(true)
   }
 
   const currentTabIndex = tabs.findIndex(t => t.key === activeTab)
@@ -44,6 +44,12 @@ const Index: React.FC = () => {
     let info: any = window.localStorage.getItem('user-info') || '{}'
     info = JSON.parse(info)
     info.id && dispatch(setUser(info))
+
+    if (info.id) {
+      setIsLoginModalOpen(false)
+    } else {
+      setIsLoginModalOpen(true)
+    }
   }, [])
 
   return (
