@@ -1,70 +1,194 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Button, Text } from '@tarojs/components';
 import './CheckIn.scss';
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
 import { checkIn } from '@/api/index'
 import Taro from '@tarojs/taro'
-import { AtMessage } from 'taro-ui'
+import { AtMessage, AtModal, AtModalHeader, AtModalContent } from 'taro-ui'
+import CheckInForm from './CheckInForm';
 
 type CheckInProps = {
-  onCheckInRequest?: () => void;  // 新增props用于通知父组件
+  onCheckInRequest?: () => void;
 };
 
+// 打卡数据类型
+export interface CheckInFormData {
+  exerciseType: string;
+  startTime: string;
+  endTime: string;
+  notes: string;
+}
+
 const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
-  // 修改状态为打卡日期
-  const [checkInDate, setCheckInDate] = useState<string>('');
-  // 新增当天日期状态
-  const [today] = useState(new Date().toLocaleDateString());
-  const user = useSelector((state: RootState) => state.user)
+  const [checkInTime, setCheckInTime] = useState<string>('');
+  const [checkInData, setCheckInData] = useState<CheckInFormData>({
+          exerciseType: '',
+          startTime: '',
+          endTime: '',
+          notes: '',
+        });
+  const [isCheckedIn, setIsCheckedIn] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
   
-  useEffect(() => {
-    // 修改存储字段为打卡日期
-    const storedDate = localStorage.getItem('checkInDate');
-    if (storedDate === today) {
-      setCheckInDate(localStorage.getItem('checkInTime') || '');
-    }
+  const user = useSelector((state: RootState) => state.user);
+  
+  // 获取今天的日期字符串
+  const getTodayString = useCallback(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   }, []);
 
-  const handleCheckIn = () => {
-    console.warn(user)
-    if (!user.id) {
-      onCheckInRequest?.();  // 通知父组件需要登录
-      return;
-    }
+  // 检查今日是否已打卡
+  const checkTodayStatus = useCallback(() => {
+    try {
+      const storedDate = Taro.getStorageSync('checkInDate');
+      const storedTime = Taro.getStorageSync('checkInTime');
+      const storedData = Taro.getStorageSync('checkInData');
+      const today = getTodayString();
 
-    checkIn({userId: user.id, groupId: '', status: 'completed', notes: ''}).then(res => {
-      if (res.code === 200) {
-        const now = new Date();
-        const timeString = now.toLocaleString();
-        // 同时存储日期和时间
-        localStorage.setItem('checkInDate', today);
-        localStorage.setItem('checkInTime', timeString);
-        setCheckInDate(timeString);
+      if (storedDate === today && storedTime) {
+        setIsCheckedIn(true);
+        setCheckInTime(storedTime);
+        setCheckInData(storedData)
       } else {
-        Taro.atMessage({
-          'message': res.message,
-          'type': 'error',
+        setIsCheckedIn(false);
+        setCheckInTime('');
+        setCheckInData({
+          exerciseType: '',
+          startTime: '',
+          endTime: '',
+          notes: '',
         })
       }
-    }).catch(err => {
+    } catch (error) {
+      console.error('检查打卡状态失败:', error);
+    }
+  }, [getTodayString]);
+
+  useEffect(() => {
+    checkTodayStatus();
+  }, [checkTodayStatus]);
+
+  // 点击打卡按钮，显示弹窗
+  const handleShowModal = () => {
+    if (!user.id) {
+      onCheckInRequest?.();
+      return;
+    }
+    setShowModal(true);
+  };
+
+  // 关闭弹窗
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handlerDiffTime = () => {
+    const day = checkInTime.split(' ')[0] + ' '
+    const startTime = new Date(day + checkInData.startTime);
+    const endTime = new Date(day + checkInData.endTime);
+    const diffTime = endTime.getTime() - startTime.getTime();
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+    return `${diffMinutes}分钟`
+  }
+
+  // 提交打卡数据
+  const handleSubmitCheckIn = async (formData: CheckInFormData) => {
+    try {
+      setLoading(true);
+      
+      const response = await checkIn({
+        userId: user.id,
+        groupId: '',
+        status: 'completed',
+        notes: JSON.stringify({
+          notes: formData.notes,
+          exerciseType: formData.exerciseType,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+        })
+      });
+
+      if (response.code === 200) {
+        const now = new Date();
+        const timeString = now.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        const dateString = getTodayString();
+
+        // 存储打卡信息
+        Taro.setStorageSync('checkInDate', dateString);
+        Taro.setStorageSync('checkInTime', timeString);
+        Taro.setStorageSync('checkInData', formData); // 存储打卡详情
+        
+        // 更新状态
+        setIsCheckedIn(true);
+        setCheckInTime(timeString);
+        setShowModal(false);
+
+        // 显示成功消息
+        Taro.atMessage({
+          message: '打卡成功！',
+          type: 'success',
+        });
+      } else {
+        throw new Error(response.message || '打卡失败');
+      }
+    } catch (error) {
+      console.error('打卡失败:', error);
       Taro.atMessage({
-        'message': err.message || '失败！',
-        'type': 'error',
-      })
-    })
+        message: error.message || '打卡失败，请重试',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View className="check-in-container">
-      {checkInDate ? (
-        <View>
-          <Text>今日已打卡</Text>
-          <Text>打卡时间：{checkInDate}</Text>
+      {isCheckedIn ? (
+        <View className="check-in-success">
+          <Text className="success-text">✅ 今日已打卡</Text>
+          <Text className="time-text">打卡时间：{checkInTime}</Text>
+          <Text className="time-text">运动类型：{checkInData.exerciseType}</Text>
+          <Text className="time-text">开始时间：{checkInData.startTime}</Text>
+          <Text className="time-text">结束时间：{checkInData.endTime}</Text>
+          <Text className="time-text">备注：{checkInData.notes}</Text>
+          <Text className="time-text">总耗时：{handlerDiffTime()}</Text>
         </View>
       ) : (
-        <Button onClick={handleCheckIn}>立即打卡</Button>
+        <Button 
+          className="check-in-btn"
+          onClick={handleShowModal}
+        >
+          立即打卡
+        </Button>
       )}
+
+      {/* 打卡弹窗 */}
+      <AtModal
+        isOpened={showModal}
+        closeOnClickOverlay={false}
+        className="check-in-modal"
+      >
+        <AtModalHeader>运动打卡</AtModalHeader>
+        <AtModalContent>
+          <CheckInForm
+            loading={loading}
+            onSubmit={handleSubmitCheckIn}
+            onCancel={handleCloseModal}
+          />
+        </AtModalContent>
+      </AtModal>
+
       <AtMessage />
     </View>
   );

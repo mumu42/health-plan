@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
-import { AtForm, AtInput, AtButton, AtDivider, AtIcon } from 'taro-ui';
+import { AtNoticebar, AtInput, AtButton, AtDivider, AtIcon } from 'taro-ui';
 import './LoginCmp.scss';
 // 假设图片在当前目录下，引入图片
 import loginImage from '@/assets/images/logo.gif'; 
@@ -87,6 +87,7 @@ const LoginCmp: React.FC<LoginProps> = ({ isOpen, onClose }) => {
             mode="aspectFit"
           />
           <AtDivider content="·" fontColor='#2d8cf0' lineColor='#2d8cf0'/>
+          <AtNoticebar>若已注册，则登录账户。若未注册账户，第一次登录则自动注册账户。请务必记住你的账户信息。</AtNoticebar>
           <View className="login-form">
             <AtInput
               required

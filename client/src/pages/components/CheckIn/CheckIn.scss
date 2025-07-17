@@ -3,8 +3,111 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     text-align: center;
+    height: calc(100vh - 2.2rem);
   }
   
   .check-in-container button {
     margin-top: 10px;
   }
+
+  .check-in-container {
+  padding: 1rem; // 20px
+
+  .check-in-success {
+    text-align: center;
+    padding: 1rem; // 20px
+    background: #f0f9ff;
+    border-radius: 0.4rem; // 8px
+    
+    .success-text {
+      display: block;
+      font-size: 0.9rem; // 18px
+      color: #10b981;
+      margin-bottom: 0.5rem; // 10px
+    }
+    
+    .time-text {
+      display: block;
+      font-size: 0.7rem; // 14px
+      color: #6b7280;
+    }
+  }
+
+  .check-in-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 0.4rem; // 8px
+    padding: 0.75rem 1.5rem; // 15px 30px
+    font-size: 0.8rem; // 16px
+  }
+}
+
+.check-in-modal {
+  .at-modal__content {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+.check-in-form {
+  .form-item {
+    margin-bottom: 0.5rem; // 10px
+    &.form-item-error {
+      .at-input, .at-list__item {
+        border-color: #ef4444;
+      }
+    }
+  }
+
+  .error-text {
+    color: #ef4444;
+    font-size: 0.6rem; // 12px
+    margin-top: 0.25rem; // 5px
+    margin-left: 1rem; // 20px
+    display: block;
+  }
+
+  .notes-textarea {
+    margin: 0.5rem 1rem; // 10px 20px
+  }
+
+  .form-buttons {
+    display: flex;
+    padding: 1rem; // 20px
+    gap: 0.75rem; // 15px
+    
+    .cancel-btn {
+      flex: 1;
+      background: #f3f4f6;
+      color: #6b7280;
+      border: 0.05rem solid #d1d5db; // 1px
+    }
+    
+    .submit-btn {
+      flex: 2;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+    }
+  }
+}
+.at-modal .at-modal__container {
+  width: calc(100vw - 1rem);
+  max-width: none;
+}
+
+.form-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  .form-item-content {
+    flex: 1;
+  }
+  .label {
+    display: block;
+    width: 4rem;
+    text-align: right;
+    margin-right: 0.5rem;
+  }
+}

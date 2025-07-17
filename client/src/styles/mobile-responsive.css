@@ -28,19 +28,19 @@
 }
 
 .at-modal .at-modal__header {
-  font-size: 18px;
+  font-size: 36px;
   font-weight: 600;
 }
 
 @media screen and (max-width: 375px) {
   .at-modal .at-modal__header {
-    font-size: 16.2px;
+    font-size: 32.4px;
   }
 }
 
 @media screen and (max-width: 320px) {
   .at-modal .at-modal__header {
-    font-size: 14.4px;
+    font-size: 28.8px;
   }
 }
 
@@ -107,7 +107,6 @@
 }
 
 .at-input .at-input__input {
-  padding: 12px;
   font-size: 16px;
 }
 
@@ -120,18 +119,6 @@
 @media screen and (max-width: 320px) {
   .at-input .at-input__input {
     font-size: 12.8px;
-  }
-}
-
-@media screen and (max-width: 375px) {
-  .at-input .at-input__input {
-    padding: 10px;
-  }
-}
-
-@media screen and (max-width: 320px) {
-  .at-input .at-input__input {
-    padding: 8px;
   }
 }
 
@@ -165,20 +152,8 @@
 }
 
 .at-tabs .at-tabs__header .at-tabs__item {
-  font-size: 16px;
+  font-size: 1rem;
   padding: 12px 16px;
-}
-
-@media screen and (max-width: 375px) {
-  .at-tabs .at-tabs__header .at-tabs__item {
-    font-size: 14.4px;
-  }
-}
-
-@media screen and (max-width: 320px) {
-  .at-tabs .at-tabs__header .at-tabs__item {
-    font-size: 12.8px;
-  }
 }
 
 @media screen and (max-width: 375px) {
