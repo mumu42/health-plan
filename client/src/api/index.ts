@@ -118,6 +118,15 @@ export function userRanking(): Promise<any> {
 }
 
 /**
+ * 用户打卡-周记录
+ * @param data 
+ * @returns Promise<any>
+ * */
+export function userRankForWeek(id: Number | String): Promise<any> {
+  return get('/users/week/' + id)
+}
+
+/**
  * 群组打卡排名
  * @param data
  * @returns Promise<any>

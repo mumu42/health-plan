@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { AtTabs, AtTabsPane } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtModal } from 'taro-ui'
 import { View } from '@tarojs/components'
 // import type { RootState } from '../../store'
 import CheckIn from '../components/CheckIn/CheckIn'
@@ -11,6 +11,7 @@ import './index.scss'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/store'
 import { setUser } from '@/store/userSlice'
+import { userRankForWeek } from '@/api/index'
 
 const tabs = [
   { label: '打卡', key: 'check-in' },
@@ -20,7 +21,8 @@ const tabs = [
 
 const Index: React.FC = () => {
   const [activeTab, setActiveTab] = useState('create-group')
-  
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false)
+  const [checkInData, setCheckInData] = useState<any>({})
   // 正确使用useSelector
   const user = useSelector((state: RootState) => state.user)
   const dispatch = useDispatch<AppDispatch>()
@@ -47,10 +49,25 @@ const Index: React.FC = () => {
 
     if (info.id) {
       setIsLoginModalOpen(false)
+      const preDate = Number(localStorage.getItem('dataModalOpenDate') || 0)
+      const preDateDay = new Date(preDate).getDay()
+      const curDateDay = new Date().getDay()
+      if (curDateDay !== preDateDay) {
+        userRankForWeek(info.id).then(res => {
+          if (res.code !== 200) {
+            return
+          }
+          setCheckInData({
+            ...res.data
+          })
+          setIsDataModalOpen(true)
+        })
+      }
     } else {
       setIsLoginModalOpen(true)
+      setIsDataModalOpen(false)
     }
-  }, [])
+  }, [user])
 
   return (
     <View className='index'>
@@ -71,6 +88,18 @@ const Index: React.FC = () => {
       </AtTabs>
 
       <LoginCmp isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+
+      <AtModal
+        isOpened={isDataModalOpen}
+        title={`${user.name}`}
+        cancelText=''
+        confirmText='确认'
+        onConfirm={() => {
+          setIsDataModalOpen(false)
+          localStorage.setItem('dataModalOpenDate', String(new Date().getTime()))
+        }}
+        content={`恭喜您上周总计打卡${checkInData.totalCheckInCount || 0}次，总计时${checkInData.totalCheckInTime || 0}分钟`}
+      />
     </View>
   )
 }

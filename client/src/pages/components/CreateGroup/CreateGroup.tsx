@@ -61,7 +61,6 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ onAuthRequired }) => {
 
 
   useEffect(() => {
-    console.warn('user=', user)
     if (user.id) {
       groupList()
       getNotJoinGroupAll()
