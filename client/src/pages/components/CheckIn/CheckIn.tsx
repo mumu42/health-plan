@@ -103,12 +103,7 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
         userId: user.id,
         groupId: '',
         status: 'completed',
-        notes: JSON.stringify({
-          notes: formData.notes,
-          exerciseType: formData.exerciseType,
-          startTime: formData.startTime,
-          endTime: formData.endTime,
-        })
+        ...formData
       });
 
       if (response.code === 200) {

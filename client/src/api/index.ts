@@ -123,7 +123,7 @@ export function userRanking(): Promise<any> {
  * @returns Promise<any>
  * */
 export function userRankForWeek(id: Number | String): Promise<any> {
-  return get('/users/week/' + id)
+  return get('/checks/' + id + '/lastweek')
 }
 
 /**

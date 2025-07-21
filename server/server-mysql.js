@@ -10,46 +10,8 @@ const app = express();
 // 设置服务器端口号为3001
 const port = 3001;
 
-// 使用CORS中间件，允许跨域请求 - 针对宝塔面板部署优化
-app.use(cors({
-  origin: function (origin, callback) {
-    // 允许没有origin的请求（比如移动端应用、小程序等）
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      // 本地开发环境
-      'http://localhost:3000',
-      'http://127.0.0.1:3000', 
-      'http://localhost:8080',
-      'http://127.0.0.1:8080',
-      'http://localhost:3001',
-      'http://127.0.0.1:3001',
-      // 阿里云服务器
-      'http://47.107.184.99:3000',
-      'http://47.107.184.99:3001',
-      'http://47.107.184.99',
-      'https://47.107.184.99',
-      // 域名访问（如果有域名的话）
-      'http://47.107.184.99:80',
-      'http://47.107.184.99:443',
-      'https://47.107.184.99:80',
-      'https://47.107.184.99:443'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS request from origin:', origin);
-      // 生产环境允许所有origin，但记录日志
-      callback(null, true);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Forwarded-For', 'X-Real-IP'],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  maxAge: 86400 // 预检请求缓存24小时
-}));
+// 使用CORS中间件，允许跨域请求
+app.use(cors());
 
 // 处理预检请求
 app.options('*', cors());
@@ -74,9 +36,9 @@ app.use((req, res, next) => {
 // 创建MySQL连接池
 const pool = mysql.createPool({
   host: 'localhost',
-  user: 'root',
-  password: 'root_hgz0521', // m5WnPB6SecKPDk5h
-  database: 'health',
+  user: 'yourname',
+  password: 'yourpassword',
+  database: 'yourbase',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -103,9 +65,16 @@ async function initializeDatabase() {
         userId INT,
         groupId INT,
         date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        status ENUM('completed', 'skipped'),
+        status ENUM('completed', 'skipped') DEFAULT 'completed',
+        exerciseType VARCHAR(50),
+        startTime VARCHAR(10),
+        endTime VARCHAR(10),
         notes TEXT,
-        FOREIGN KEY (userId) REFERENCES users(id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES users(id),
+        INDEX idx_user_date (userId, date),
+        INDEX idx_date (date)
       )
     `);
 
@@ -132,7 +101,7 @@ async function initializeDatabase() {
       )
     `);
 
-    console.log('Database initialized successfully');
+    console.log(new Date() + ' Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
   }
@@ -146,46 +115,7 @@ app.use(express.json());
 
 // 定义一个简单的测试路由，返回"Hello World!"
 app.get('/test', (req, res) => {
-  res.json({
-    message: 'Hello World!',
-    timestamp: new Date().toISOString(),
-    cors: 'CORS is working!'
-  });
-});
-
-// 添加CORS测试路由
-app.get('/cors-test', (req, res) => {
-  res.json({
-    message: 'CORS test successful',
-    origin: req.headers.origin,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-    headers: req.headers,
-    server: 'Baota Panel Deployed Server'
-  });
-});
-
-// 添加详细的CORS调试路由
-app.get('/cors-debug', (req, res) => {
-  console.log('CORS Debug Request:', {
-    origin: req.headers.origin,
-    method: req.method,
-    headers: req.headers,
-    url: req.url,
-    timestamp: new Date().toISOString()
-  });
-  
-  res.json({
-    status: 'success',
-    message: 'CORS debug information logged',
-    requestInfo: {
-      origin: req.headers.origin,
-      method: req.method,
-      userAgent: req.headers['user-agent'],
-      accept: req.headers.accept,
-      timestamp: new Date().toISOString()
-    }
-  });
+  res.send('Hello World!');
 });
 
 // 定义登录接口，处理POST请求
@@ -247,9 +177,10 @@ app.post('/login', async (req, res) => {
 });
 
 // 修改打卡接口
+// 修改打卡接口，支持新的字段
 app.post('/checkin', async (req, res) => {
   try {
-    const { userId, groupId, status, notes } = req.body;
+    const { userId, groupId, status, notes, exerciseType, startTime, endTime } = req.body;
     
     // 验证用户是否存在
     const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
@@ -260,7 +191,7 @@ app.post('/checkin', async (req, res) => {
       });
     }
 
-    // 处理groupId参数，确保是有效的整数或null
+    // 处理groupId参数
     let processedGroupId = null;
     if (groupId !== null && groupId !== undefined && groupId !== '') {
       const parsedGroupId = parseInt(groupId);
@@ -287,19 +218,22 @@ app.post('/checkin', async (req, res) => {
         message: '今天已经打卡过了',
         data: {
           checkId: existingChecks[0].id,
-          status: existingChecks[0].status
+          status: existingChecks[0].status,
+          exerciseType: existingChecks[0].exerciseType,
+          startTime: existingChecks[0].startTime,
+          endTime: existingChecks[0].endTime
         }
       });
     }
 
-    // 创建打卡记录
+    // 创建打卡记录，包含新字段
     const [checkResult] = await pool.query(
-      'INSERT INTO checks (userId, groupId, status, notes) VALUES (?, ?, ?, ?)',
-      [userId, processedGroupId, status, notes]
+      'INSERT INTO checks (userId, groupId, status, notes, exerciseType, startTime, endTime) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, processedGroupId, status || 'completed', notes || '', exerciseType || '', startTime || '', endTime || '']
     );
 
     // 根据打卡状态决定累加值
-    const incrementValue = status === 'completed' ? 1 : 0;
+    const incrementValue = (status || 'completed') === 'completed' ? 1 : 0;
     
     // 更新用户打卡次数
     await pool.query(
@@ -333,7 +267,11 @@ app.post('/checkin', async (req, res) => {
         userId,
         groupId: processedGroupId,
         date: new Date(),
-        status,
+        status: status || 'completed',
+        exerciseType: exerciseType || '',
+        startTime: startTime || '',
+        endTime: endTime || '',
+        notes: notes || '',
         userCheckInCount: updatedUser[0].checkInCount,
         groupCheckInCount: updatedGroup[0].checkInCount
       },
@@ -802,6 +740,249 @@ app.get('/users/ranking', async (req, res) => {
   }
 });
 
+// 定义获取用户上周签到数据接口，处理GET请求
+app.get('/checks/:userId/lastweek', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // 验证用户是否存在
+    const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 计算上周的开始和结束时间
+    const now = new Date();
+    const currentDay = now.getDay(); // 0=周日, 1=周一, ..., 6=周六
+    const daysToLastSunday = currentDay === 0 ? 7 : currentDay; // 如果今天是周日，则上周日是7天前
+    
+    // 上周日的开始时间
+    const lastWeekStart = new Date(now);
+    lastWeekStart.setDate(now.getDate() - daysToLastSunday - 6); // 上周一
+    lastWeekStart.setHours(0, 0, 0, 0);
+    
+    // 上周六的结束时间
+    const lastWeekEnd = new Date(now);
+    lastWeekEnd.setDate(now.getDate() - daysToLastSunday); // 上周日
+    lastWeekEnd.setHours(23, 59, 59, 999);
+
+    console.log('查询上周时间范围:', {
+      start: lastWeekStart.toLocaleString('zh-CN'),
+      end: lastWeekEnd.toLocaleString('zh-CN')
+    });
+
+    // 查询上周的签到记录
+    const [checks] = await pool.query(
+      `SELECT 
+        id,
+        date,
+        status,
+        exerciseType,
+        startTime,
+        endTime,
+        notes,
+        created_at
+       FROM checks 
+       WHERE userId = ? 
+         AND date BETWEEN ? AND ?
+       ORDER BY date ASC`,
+      [userId, lastWeekStart, lastWeekEnd]
+    );
+
+    // 格式化数据，包含每天的详细信息
+    const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const formattedData = [];
+    
+    // 生成上周7天的完整数据
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(lastWeekStart);
+      currentDate.setDate(lastWeekStart.getDate() + i);
+      
+      // 查找当天的签到记录
+      const dayCheck = checks.find(check => {
+        const checkDate = new Date(check.date);
+        return checkDate.toDateString() === currentDate.toDateString();
+      });
+      
+      formattedData.push({
+        date: currentDate.toISOString().split('T')[0], // YYYY-MM-DD 格式
+        dayName: weekDays[i],
+        hasCheckedIn: !!dayCheck,
+        checkInData: dayCheck ? {
+          id: dayCheck.id,
+          status: dayCheck.status,
+          exerciseType: dayCheck.exerciseType,
+          startTime: dayCheck.startTime,
+          endTime: dayCheck.endTime,
+          notes: dayCheck.notes,
+          checkInTime: dayCheck.date
+        } : null
+      });
+    }
+
+    // 计算统计信息
+    const totalDays = 7;
+    const checkedInDays = checks.length;
+    const completedDays = checks.filter(check => check.status === 'completed').length;
+    const skippedDays = checks.filter(check => check.status === 'skipped').length;
+    const checkInRate = ((checkedInDays / totalDays) * 100).toFixed(1);
+
+    // 统计运动类型
+    const exerciseTypeStats = {};
+    checks.forEach(check => {
+      if (check.exerciseType) {
+        exerciseTypeStats[check.exerciseType] = (exerciseTypeStats[check.exerciseType] || 0) + 1;
+      }
+    });
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        userId: parseInt(userId),
+        weekPeriod: {
+          start: lastWeekStart.toISOString().split('T')[0],
+          end: lastWeekEnd.toISOString().split('T')[0],
+          description: '上周'
+        },
+        statistics: {
+          totalDays,
+          checkedInDays,
+          completedDays,
+          skippedDays,
+          checkInRate: `${checkInRate}%`,
+          exerciseTypeStats
+        },
+        dailyData: formattedData,
+        rawChecks: checks.map(check => ({
+          id: check.id,
+          date: check.date,
+          status: check.status,
+          exerciseType: check.exerciseType,
+          startTime: check.startTime,
+          endTime: check.endTime,
+          notes: check.notes,
+          createdAt: check.created_at
+        }))
+      },
+      message: '获取上周签到数据成功'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义获取指定周签到数据的接口（可选，更灵活）
+app.get('/checks/:userId/week', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { weekOffset = -1 } = req.query; // weekOffset: 0=本周, -1=上周, -2=上上周
+    
+    // 验证用户是否存在
+    const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 计算指定周的开始和结束时间
+    const now = new Date();
+    const currentDay = now.getDay();
+    const daysToThisWeekStart = currentDay === 0 ? 6 : currentDay - 1; // 本周一距离今天的天数
+    
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysToThisWeekStart + (parseInt(weekOffset) * 7));
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    // 查询指定周的签到记录
+    const [checks] = await pool.query(
+      `SELECT 
+        id, date, status, exerciseType, startTime, endTime, notes, created_at
+       FROM checks 
+       WHERE userId = ? AND date BETWEEN ? AND ?
+       ORDER BY date ASC`,
+      [userId, weekStart, weekEnd]
+    );
+
+    // 格式化返回数据（与上面类似的逻辑）
+    const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const formattedData = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(weekStart.getDate() + i);
+      
+      const dayCheck = checks.find(check => {
+        const checkDate = new Date(check.date);
+        return checkDate.toDateString() === currentDate.toDateString();
+      });
+      
+      formattedData.push({
+        date: currentDate.toISOString().split('T')[0],
+        dayName: weekDays[i],
+        hasCheckedIn: !!dayCheck,
+        checkInData: dayCheck ? {
+          id: dayCheck.id,
+          status: dayCheck.status,
+          exerciseType: dayCheck.exerciseType,
+          startTime: dayCheck.startTime,
+          endTime: dayCheck.endTime,
+          notes: dayCheck.notes,
+          checkInTime: dayCheck.date
+        } : null
+      });
+    }
+
+    const totalDays = 7;
+    const checkedInDays = checks.length;
+    const checkInRate = ((checkedInDays / totalDays) * 100).toFixed(1);
+
+    let weekDescription = '';
+    if (weekOffset == 0) weekDescription = '本周';
+    else if (weekOffset == -1) weekDescription = '上周';
+    else if (weekOffset < -1) weekDescription = `${Math.abs(weekOffset)}周前`;
+    else weekDescription = `${weekOffset}周后`;
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        userId: parseInt(userId),
+        weekOffset: parseInt(weekOffset),
+        weekPeriod: {
+          start: weekStart.toISOString().split('T')[0],
+          end: weekEnd.toISOString().split('T')[0],
+          description: weekDescription
+        },
+        statistics: {
+          totalDays,
+          checkedInDays,
+          checkInRate: `${checkInRate}%`
+        },
+        dailyData: formattedData
+      },
+      message: `获取${weekDescription}签到数据成功`
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
 // 定义获取群组排行榜接口，按打卡次数倒序排序
 app.get('/groups/ranking', async (req, res) => {
   try {
@@ -1040,6 +1221,7 @@ app.get('/groups/not-joined/:userId', async (req, res) => {
 
 // 定义查询所有群组接口，处理GET请求
 app.get('/groupList', async (req, res) => {
+    console.log('groupList')
   try {
     // 查询所有群组，按创建时间降序排列
     const [groups] = await pool.query(
