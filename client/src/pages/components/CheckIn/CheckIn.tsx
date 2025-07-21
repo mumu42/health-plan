@@ -132,6 +132,9 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
         setIsCheckedIn(true);
         setCheckInTime(timeString);
         setShowModal(false);
+        setCheckInData({
+          ...formData
+        })
 
         // 显示成功消息
         Taro.atMessage({
@@ -161,7 +164,7 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
           <Text className="time-text">运动类型：{checkInData.exerciseType}</Text>
           <Text className="time-text">开始时间：{checkInData.startTime}</Text>
           <Text className="time-text">结束时间：{checkInData.endTime}</Text>
-          <Text className="time-text">备注：{checkInData.notes}</Text>
+          {checkInData.notes && <Text className="time-text">备注：{checkInData.notes}</Text>}
           <Text className="time-text">总耗时：{handlerDiffTime()}</Text>
         </View>
       ) : (
