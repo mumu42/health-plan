@@ -66,7 +66,7 @@ const Index: React.FC = () => {
           <CreateGroup onAuthRequired={openLoginModal}/>
         </AtTabsPane>
         <AtTabsPane current={currentTabIndex} index={2}>
-          <World />
+          <World show={currentTabIndex === 2}/>
         </AtTabsPane>
       </AtTabs>
 

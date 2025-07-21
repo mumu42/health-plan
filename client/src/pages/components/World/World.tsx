@@ -3,23 +3,25 @@ import { View } from '@tarojs/components';
 import { AtAccordion, AtList, AtListItem } from 'taro-ui';
 import { userRanking, groupRanking } from '@/api/index'
 
-const World: React.FC = () => {
+const World: React.FC<{show: boolean}> = ({show = false}) => {
     const [activePanel, setActivePanel] = useState<string>('');
     const [userRankingList, setUserRankingList] = useState<any[]>([]);
     const [groupRankingList, setGroupRankingList] = useState<any[]>([]);
     useEffect(() => {
-      userRanking().then(res => {
-            if (res.code === 200) {
-              setUserRankingList(res.data)
-            }
-        })
+      if (show) {
+        userRanking().then(res => {
+              if (res.code === 200) {
+                setUserRankingList(res.data)
+              }
+          })
 
-      groupRanking().then(res => {
-            if (res.code === 200) {
-              setGroupRankingList(res.data)
-            }
-        })
-    }, [])
+        groupRanking().then(res => {
+              if (res.code === 200) {
+                setGroupRankingList(res.data)
+              }
+          })
+      }
+    }, [show])
     return (
         <View className="world-container">
             <AtAccordion
