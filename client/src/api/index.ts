@@ -135,6 +135,15 @@ export function groupRanking(): Promise<any> {
     return get('/groups/ranking')
 }
 
+/**
+ * 获取用户当天打卡信息
+ * @param id 
+ * @returns 
+ */
+export function checkInfoByToday(id: Number | String): Promise<any> {
+  return get(`/checks/${id}/today`)
+}
+
 // // 文件上传示例
 // upload<{ url: string }>('/upload', 'path/to/file', { description: 'test' })
 //   .then(res => console.log(res.url))

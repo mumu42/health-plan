@@ -3,7 +3,7 @@ import { View, Button, Text } from '@tarojs/components';
 import './CheckIn.scss';
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
-import { checkIn } from '@/api/index'
+import { checkIn, checkInfoByToday } from '@/api/index'
 import Taro from '@tarojs/taro'
 import { AtMessage, AtModal, AtModalHeader, AtModalContent } from 'taro-ui'
 import CheckInForm from './CheckInForm';
@@ -51,7 +51,16 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
       if (storedDate === today && storedTime) {
         setIsCheckedIn(true);
         setCheckInTime(storedTime);
-        setCheckInData(storedData)
+        setCheckInData(storedData);
+        (!storedData || !storedData.startTime) && user.id && checkInfoByToday(user.id).then(res => {
+          const {exerciseType, startTime, endTime, notes} = res.data
+          setCheckInData({
+            exerciseType,
+            startTime,
+            endTime,
+            notes,
+          })
+        })
       } else {
         setIsCheckedIn(false);
         setCheckInTime('');

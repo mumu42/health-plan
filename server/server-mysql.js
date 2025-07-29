@@ -983,6 +983,789 @@ app.get('/checks/:userId/week', async (req, res) => {
   }
 });
 
+// 定义获取用户当天打卡信息接口，处理GET请求
+app.get('/checks/:userId/today', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // 验证用户是否存在
+    const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 获取今天的开始和结束时间
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    console.log('查询今天打卡时间范围:', {
+      start: todayStart.toLocaleString('zh-CN'),
+      end: todayEnd.toLocaleString('zh-CN')
+    });
+
+    // 查询今天的打卡记录
+    const [checks] = await pool.query(
+      `SELECT 
+        c.id,
+        c.userId,
+        c.groupId,
+        c.date,
+        c.status,
+        c.exerciseType,
+        c.startTime,
+        c.endTime,
+        c.notes,
+        c.created_at,
+        c.updated_at,
+        g.name as groupName
+       FROM checks c
+       LEFT JOIN \`groups\` g ON c.groupId = g.id
+       WHERE c.userId = ? 
+         AND c.date BETWEEN ? AND ?
+       ORDER BY c.created_at DESC
+       LIMIT 1`,
+      [userId, todayStart, todayEnd]
+    );
+
+    // 获取用户基本信息
+    const [userInfo] = await pool.query(
+      'SELECT id, nickname, checkInCount FROM users WHERE id = ?',
+      [userId]
+    );
+
+    // 今天的日期信息
+    const today = new Date();
+    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const todayInfo = {
+      date: today.toISOString().split('T')[0], // YYYY-MM-DD 格式
+      dayName: weekDays[today.getDay()],
+      fullDate: today.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    };
+
+    if (checks.length > 0) {
+      const checkData = checks[0];
+      
+      // 计算运动时长（如果有开始和结束时间）
+      let duration = null;
+      if (checkData.startTime && checkData.endTime) {
+        const start = new Date(`2000-01-01 ${checkData.startTime}`);
+        const end = new Date(`2000-01-01 ${checkData.endTime}`);
+        if (end > start) {
+          const durationMs = end.getTime() - start.getTime();
+          const hours = Math.floor(durationMs / (1000 * 60 * 60));
+          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+          duration = {
+            hours,
+            minutes,
+            totalMinutes: Math.floor(durationMs / (1000 * 60)),
+            formatted: hours > 0 ? `${hours}小时${minutes}分钟` : `${minutes}分钟`
+          };
+        }
+      }
+
+      res.status(200).json({
+        code: 200,
+        data: {
+          hasCheckedIn: true,
+          todayInfo,
+          userInfo: userInfo[0],
+          checkInData: {
+            id: checkData.id,
+            userId: checkData.userId,
+            groupId: checkData.groupId,
+            groupName: checkData.groupName,
+            date: checkData.date,
+            status: checkData.status,
+            exerciseType: checkData.exerciseType,
+            startTime: checkData.startTime,
+            endTime: checkData.endTime,
+            duration,
+            notes: checkData.notes,
+            checkInTime: checkData.date,
+            createdAt: checkData.created_at,
+            updatedAt: checkData.updated_at
+          }
+        },
+        message: '获取今日打卡信息成功'
+      });
+    } else {
+      res.status(200).json({
+        code: 200,
+        data: {
+          hasCheckedIn: false,
+          todayInfo,
+          userInfo: userInfo[0],
+          checkInData: null
+        },
+        message: '今日尚未打卡'
+      });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义获取指定日期打卡信息接口，处理GET请求（可选，更灵活）
+app.get('/checks/:userId/date/:date', async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+    
+    // 验证用户是否存在
+    const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    // 验证日期格式 YYYY-MM-DD
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({
+        code: 400,
+        message: '日期格式错误，请使用 YYYY-MM-DD 格式'
+      });
+    }
+
+    // 构造查询日期的开始和结束时间
+    const queryDate = new Date(date);
+    if (isNaN(queryDate.getTime())) {
+      return res.status(400).json({
+        code: 400,
+        message: '无效的日期'
+      });
+    }
+
+    const dayStart = new Date(queryDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(queryDate);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    // 查询指定日期的打卡记录
+    const [checks] = await pool.query(
+      `SELECT 
+        c.id,
+        c.userId,
+        c.groupId,
+        c.date,
+        c.status,
+        c.exerciseType,
+        c.startTime,
+        c.endTime,
+        c.notes,
+        c.created_at,
+        c.updated_at,
+        g.name as groupName
+       FROM checks c
+       LEFT JOIN \`groups\` g ON c.groupId = g.id
+       WHERE c.userId = ? 
+         AND c.date BETWEEN ? AND ?
+       ORDER BY c.created_at DESC`,
+      [userId, dayStart, dayEnd]
+    );
+
+    // 日期信息
+    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const dateInfo = {
+      date: date,
+      dayName: weekDays[queryDate.getDay()],
+      fullDate: queryDate.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      isToday: date === new Date().toISOString().split('T')[0]
+    };
+
+    // 获取用户基本信息
+    const [userInfo] = await pool.query(
+      'SELECT id, nickname, checkInCount FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (checks.length > 0) {
+      // 可能有多条记录，返回所有记录
+      const checkInRecords = checks.map(checkData => {
+        // 计算运动时长
+        let duration = null;
+        if (checkData.startTime && checkData.endTime) {
+          const start = new Date(`2000-01-01 ${checkData.startTime}`);
+          const end = new Date(`2000-01-01 ${checkData.endTime}`);
+          if (end > start) {
+            const durationMs = end.getTime() - start.getTime();
+            const hours = Math.floor(durationMs / (1000 * 60 * 60));
+            const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+            duration = {
+              hours,
+              minutes,
+              totalMinutes: Math.floor(durationMs / (1000 * 60)),
+              formatted: hours > 0 ? `${hours}小时${minutes}分钟` : `${minutes}分钟`
+            };
+          }
+        }
+
+        return {
+          id: checkData.id,
+          userId: checkData.userId,
+          groupId: checkData.groupId,
+          groupName: checkData.groupName,
+          date: checkData.date,
+          status: checkData.status,
+          exerciseType: checkData.exerciseType,
+          startTime: checkData.startTime,
+          endTime: checkData.endTime,
+          duration,
+          notes: checkData.notes,
+          checkInTime: checkData.date,
+          createdAt: checkData.created_at,
+          updatedAt: checkData.updated_at
+        };
+      });
+
+      res.status(200).json({
+        code: 200,
+        data: {
+          hasCheckedIn: true,
+          dateInfo,
+          userInfo: userInfo[0],
+          checkInRecords,
+          primaryCheckIn: checkInRecords[0], // 主要打卡记录（最新的）
+          totalRecords: checkInRecords.length
+        },
+        message: `获取 ${date} 打卡信息成功`
+      });
+    } else {
+      res.status(200).json({
+        code: 200,
+        data: {
+          hasCheckedIn: false,
+          dateInfo,
+          userInfo: userInfo[0],
+          checkInRecords: [],
+          primaryCheckIn: null,
+          totalRecords: 0
+        },
+        message: `${date} 无打卡记录`
+      });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义获取前五十用户排行榜接口，处理GET请求
+app.get('/users/ranking/top50', async (req, res) => {
+  try {
+    // 查询前50名用户，按打卡次数倒序排序
+    const [users] = await pool.query(
+      `SELECT 
+        id,
+        nickname, 
+        checkInCount,
+        created_at
+       FROM users 
+       WHERE checkInCount > 0
+       ORDER BY checkInCount DESC, created_at ASC
+       LIMIT 50`
+    );
+
+    // 为每个用户添加排名信息
+    const rankedUsers = users.map((user, index) => ({
+      rank: index + 1,
+      id: user.id,
+      nickname: user.nickname,
+      checkInCount: user.checkInCount,
+      joinDate: user.created_at,
+      // 添加排名等级标识
+      rankLevel: getRankLevel(index + 1),
+      // 添加排名变化趋势（这里可以后续扩展）
+      trend: 'stable' // stable, up, down
+    }));
+
+    // 统计信息
+    const [totalStats] = await pool.query(
+      'SELECT COUNT(*) as totalUsers, MAX(checkInCount) as maxCheckIn, AVG(checkInCount) as avgCheckIn FROM users WHERE checkInCount > 0'
+    );
+
+    // 获取今日打卡活跃用户数
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    
+    const [todayActive] = await pool.query(
+      'SELECT COUNT(DISTINCT userId) as todayActiveUsers FROM checks WHERE date BETWEEN ? AND ?',
+      [todayStart, todayEnd]
+    );
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        rankings: rankedUsers,
+        statistics: {
+          totalRankedUsers: users.length,
+          totalActiveUsers: totalStats[0].totalUsers,
+          maxCheckInCount: totalStats[0].maxCheckIn,
+          averageCheckInCount: Math.round(totalStats[0].avgCheckIn * 100) / 100,
+          todayActiveUsers: todayActive[0].todayActiveUsers,
+          lastUpdateTime: new Date().toISOString()
+        },
+        rankingInfo: {
+          displayCount: users.length,
+          maxRank: 50,
+          updateFrequency: '实时更新'
+        }
+      },
+      message: '获取用户排行榜成功'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 辅助函数：获取排名等级
+function getRankLevel(rank) {
+  if (rank === 1) return { level: 'champion', name: '冠军', icon: '👑' };
+  if (rank === 2) return { level: 'second', name: '亚军', icon: '🥈' };
+  if (rank === 3) return { level: 'third', name: '季军', icon: '🥉' };
+  if (rank <= 10) return { level: 'top10', name: '前十强', icon: '🏆' };
+  if (rank <= 20) return { level: 'top20', name: '前二十', icon: '🏅' };
+  if (rank <= 50) return { level: 'top50', name: '前五十', icon: '⭐' };
+  return { level: 'normal', name: '普通', icon: '👤' };
+}
+
+// 定义查询指定用户当前排名接口，处理GET请求
+app.get('/users/:userId/ranking', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // 验证用户是否存在
+    const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+
+    const currentUser = users[0];
+
+    // 查询用户当前排名（比该用户打卡次数多的用户数量 + 1）
+    const [rankResult] = await pool.query(
+      `SELECT COUNT(*) + 1 as currentRank 
+       FROM users 
+       WHERE checkInCount > ? 
+         OR (checkInCount = ? AND created_at < ?)`,
+      [currentUser.checkInCount, currentUser.checkInCount, currentUser.created_at]
+    );
+
+    const currentRank = rankResult[0].currentRank;
+
+    // 查询总用户数（有打卡记录的）
+    const [totalResult] = await pool.query(
+      'SELECT COUNT(*) as totalUsers FROM users WHERE checkInCount > 0'
+    );
+    const totalUsers = totalResult[0].totalUsers;
+
+    // 查询前一名用户信息
+    const [prevUser] = await pool.query(
+      `SELECT nickname, checkInCount 
+       FROM users 
+       WHERE checkInCount > ? 
+          OR (checkInCount = ? AND created_at < ?)
+       ORDER BY checkInCount DESC, created_at ASC
+       LIMIT 1`,
+      [currentUser.checkInCount, currentUser.checkInCount, currentUser.created_at]
+    );
+
+    // 查询后一名用户信息
+    const [nextUser] = await pool.query(
+      `SELECT nickname, checkInCount 
+       FROM users 
+       WHERE checkInCount < ? 
+          OR (checkInCount = ? AND created_at > ?)
+       ORDER BY checkInCount DESC, created_at ASC
+       LIMIT 1`,
+      [currentUser.checkInCount, currentUser.checkInCount, currentUser.created_at]
+    );
+
+    // 查询用户周围排名（前后各5名）
+    const [nearbyUsers] = await pool.query(
+      `(
+        SELECT id, nickname, checkInCount, created_at,
+        @rank := @rank + 1 as rank
+        FROM users, (SELECT @rank := 0) r
+        WHERE checkInCount > ? 
+           OR (checkInCount = ? AND created_at < ?)
+        ORDER BY checkInCount DESC, created_at ASC
+        LIMIT 5
+      )
+      UNION ALL
+      (
+        SELECT id, nickname, checkInCount, created_at, ? as rank
+        FROM users 
+        WHERE id = ?
+      )
+      UNION ALL
+      (
+        SELECT id, nickname, checkInCount, created_at,
+        @rank2 := @rank2 + ? + 1 as rank
+        FROM users, (SELECT @rank2 := 0) r2
+        WHERE checkInCount < ? 
+           OR (checkInCount = ? AND created_at > ?)
+        ORDER BY checkInCount DESC, created_at ASC
+        LIMIT 5
+      )
+      ORDER BY rank`,
+      [
+        currentUser.checkInCount, currentUser.checkInCount, currentUser.created_at,
+        currentRank,
+        userId,
+        currentRank, 
+        currentUser.checkInCount, currentUser.checkInCount, currentUser.created_at
+      ]
+    );
+
+    // 计算百分位数
+    const percentile = totalUsers > 0 ? Math.round(((totalUsers - currentRank + 1) / totalUsers) * 100) : 0;
+
+    // 查询本周打卡次数
+    const now = new Date();
+    const currentDay = now.getDay();
+    const daysToThisWeekStart = currentDay === 0 ? 6 : currentDay - 1;
+    
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysToThisWeekStart);
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const [weeklyChecks] = await pool.query(
+      'SELECT COUNT(*) as weeklyCount FROM checks WHERE userId = ? AND date >= ? AND status = "completed"',
+      [userId, weekStart]
+    );
+
+    // 查询本月打卡次数
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [monthlyChecks] = await pool.query(
+      'SELECT COUNT(*) as monthlyCount FROM checks WHERE userId = ? AND date >= ? AND status = "completed"',
+      [userId, monthStart]
+    );
+
+    // 查询连续打卡天数
+    const [consecutiveDays] = await pool.query(`
+      SELECT COUNT(*) as consecutive_days
+      FROM (
+        SELECT DATE(date) as check_date
+        FROM checks 
+        WHERE userId = ? AND status = 'completed'
+        GROUP BY DATE(date)
+        HAVING check_date >= (
+          SELECT MIN(missing_date) 
+          FROM (
+            SELECT DATE_SUB(CURDATE(), INTERVAL seq DAY) as missing_date
+            FROM (
+              SELECT 0 as seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 
+              UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+              UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14
+              UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19
+              UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24
+              UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29
+            ) seq_table
+            WHERE DATE_SUB(CURDATE(), INTERVAL seq DAY) NOT IN (
+              SELECT DATE(date) FROM checks WHERE userId = ? AND status = 'completed'
+            )
+          ) missing
+        )
+      ) recent_checks
+    `, [userId, userId]);
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        userInfo: {
+          id: currentUser.id,
+          nickname: currentUser.nickname,
+          checkInCount: currentUser.checkInCount,
+          joinDate: currentUser.created_at
+        },
+        rankingInfo: {
+          currentRank,
+          totalUsers,
+          percentile,
+          rankLevel: getRankLevel(currentRank),
+          gapToNext: prevUser.length > 0 ? prevUser[0].checkInCount - currentUser.checkInCount : 0,
+          gapToPrevious: nextUser.length > 0 ? currentUser.checkInCount - nextUser[0].checkInCount : 0
+        },
+        adjacentUsers: {
+          previous: prevUser.length > 0 ? {
+            rank: currentRank - 1,
+            nickname: prevUser[0].nickname,
+            checkInCount: prevUser[0].checkInCount
+          } : null,
+          next: nextUser.length > 0 ? {
+            rank: currentRank + 1,
+            nickname: nextUser[0].nickname,
+            checkInCount: nextUser[0].checkInCount
+          } : null
+        },
+        nearbyRankings: nearbyUsers.map(user => ({
+          rank: parseInt(user.rank),
+          id: user.id,
+          nickname: user.nickname,
+          checkInCount: user.checkInCount,
+          isCurrentUser: user.id === parseInt(userId)
+        })),
+        statistics: {
+          thisWeekChecks: weeklyChecks[0].weeklyCount,
+          thisMonthChecks: monthlyChecks[0].monthlyCount,
+          consecutiveDays: consecutiveDays[0].consecutive_days || 0
+        },
+        achievements: generateAchievements(currentUser.checkInCount, currentRank, percentile)
+      },
+      message: '获取用户排名信息成功'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 辅助函数：生成成就信息
+function generateAchievements(checkInCount, rank, percentile) {
+  const achievements = [];
+  
+  // 基于打卡次数的成就
+  if (checkInCount >= 100) achievements.push({ name: '百日坚持', icon: '💯', description: '累计打卡100天' });
+  if (checkInCount >= 50) achievements.push({ name: '五十里程碑', icon: '🎖️', description: '累计打卡50天' });
+  if (checkInCount >= 30) achievements.push({ name: '月度达人', icon: '📅', description: '累计打卡30天' });
+  
+  // 基于排名的成就
+  if (rank === 1) achievements.push({ name: '排行榜冠军', icon: '👑', description: '当前排名第一' });
+  if (rank <= 3) achievements.push({ name: '前三甲', icon: '🏆', description: '进入前三名' });
+  if (rank <= 10) achievements.push({ name: '十强选手', icon: '🏅', description: '进入前十名' });
+  
+  // 基于百分位的成就
+  if (percentile >= 90) achievements.push({ name: '顶尖玩家', icon: '⭐', description: '超越90%的用户' });
+  if (percentile >= 75) achievements.push({ name: '优秀表现', icon: '✨', description: '超越75%的用户' });
+  
+  return achievements;
+}
+
+// 定义获取前五十群组排行榜接口，处理GET请求
+app.get('/groups/ranking/top50', async (req, res) => {
+  try {
+    // 查询前50个群组，按打卡次数倒序排序
+    const [groups] = await pool.query(
+      `SELECT g.*, 
+       GROUP_CONCAT(u.nickname) as memberNicknames,
+       COUNT(gm.userId) as memberCount,
+       ROUND(g.checkInCount / COUNT(gm.userId), 2) as avgCheckInPerMember
+       FROM \`groups\` g
+       LEFT JOIN group_members gm ON g.id = gm.groupId
+       LEFT JOIN users u ON gm.userId = u.id
+       WHERE g.checkInCount > 0
+       GROUP BY g.id
+       ORDER BY g.checkInCount DESC, g.created_at ASC
+       LIMIT 50`
+    );
+
+    // 为每个群组添加排名信息
+    const rankedGroups = groups.map((group, index) => ({
+      rank: index + 1,
+      id: group.id,
+      name: group.name,
+      creatorId: group.creatorId,
+      checkInCount: group.checkInCount,
+      memberCount: group.memberCount,
+      avgCheckInPerMember: group.avgCheckInPerMember,
+      members: group.memberNicknames ? group.memberNicknames.split(',').slice(0, 5) : [], // 只显示前5个成员
+      createdAt: group.created_at,
+      rankLevel: getGroupRankLevel(index + 1),
+      efficiency: group.memberCount > 0 ? Math.round((group.checkInCount / group.memberCount) * 100) / 100 : 0
+    }));
+
+    // 统计信息
+    const [totalStats] = await pool.query(
+      'SELECT COUNT(*) as totalGroups, MAX(checkInCount) as maxCheckIn, AVG(checkInCount) as avgCheckIn FROM `groups` WHERE checkInCount > 0'
+    );
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        rankings: rankedGroups,
+        statistics: {
+          totalRankedGroups: groups.length,
+          totalActiveGroups: totalStats[0].totalGroups,
+          maxCheckInCount: totalStats[0].maxCheckIn,
+          averageCheckInCount: Math.round(totalStats[0].avgCheckIn * 100) / 100,
+          lastUpdateTime: new Date().toISOString()
+        },
+        rankingInfo: {
+          displayCount: groups.length,
+          maxRank: 50,
+          updateFrequency: '实时更新'
+        }
+      },
+      message: '获取群组排行榜成功'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 辅助函数：获取群组排名等级
+function getGroupRankLevel(rank) {
+  if (rank === 1) return { level: 'champion', name: '冠军群组', icon: '👑' };
+  if (rank === 2) return { level: 'second', name: '亚军群组', icon: '🥈' };
+  if (rank === 3) return { level: 'third', name: '季军群组', icon: '🥉' };
+  if (rank <= 10) return { level: 'top10', name: '十强群组', icon: '🏆' };
+  if (rank <= 20) return { level: 'top20', name: '二十强', icon: '🏅' };
+  if (rank <= 50) return { level: 'top50', name: '五十强', icon: '⭐' };
+  return { level: 'normal', name: '普通', icon: '👥' };
+}
+
+// 定义获取综合排行榜信息接口，处理GET请求
+app.get('/ranking/overview', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const limitNum = Math.min(parseInt(limit) || 10, 50);
+
+    // 并行查询用户和群组排行榜
+    const [userRankings, groupRankings] = await Promise.all([
+      pool.query(
+        `SELECT id, nickname, checkInCount, created_at
+         FROM users 
+         WHERE checkInCount > 0
+         ORDER BY checkInCount DESC, created_at ASC
+         LIMIT ?`,
+        [limitNum]
+      ),
+      pool.query(
+        `SELECT g.id, g.name, g.checkInCount, g.created_at, COUNT(gm.userId) as memberCount
+         FROM \`groups\` g
+         LEFT JOIN group_members gm ON g.id = gm.groupId
+         WHERE g.checkInCount > 0
+         GROUP BY g.id
+         ORDER BY g.checkInCount DESC, g.created_at ASC
+         LIMIT ?`,
+        [limitNum]
+      )
+    ]);
+
+    // 获取今日活跃统计
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const [todayStats] = await pool.query(
+      'SELECT COUNT(DISTINCT userId) as activeUsers, COUNT(*) as totalChecks FROM checks WHERE date BETWEEN ? AND ?',
+      [todayStart, todayEnd]
+    );
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        userRankings: userRankings[0].map((user, index) => ({
+          rank: index + 1,
+          id: user.id,
+          nickname: user.nickname,
+          checkInCount: user.checkInCount,
+          rankLevel: getRankLevel(index + 1)
+        })),
+        groupRankings: groupRankings[0].map((group, index) => ({
+          rank: index + 1,
+          id: group.id,
+          name: group.name,
+          checkInCount: group.checkInCount,
+          memberCount: group.memberCount,
+          rankLevel: getGroupRankLevel(index + 1)
+        })),
+        todayStatistics: {
+          activeUsers: todayStats[0].activeUsers,
+          totalTodayChecks: todayStats[0].totalChecks,
+          date: new Date().toISOString().split('T')[0]
+        },
+        lastUpdateTime: new Date().toISOString()
+      },
+      message: '获取综合排行榜成功'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 定义快速检查今日打卡状态接口（轻量级），处理GET请求
+app.get('/checks/:userId/today/status', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // 获取今天的开始和结束时间
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 只查询今天是否有打卡记录，不返回详细信息
+    const [checks] = await pool.query(
+      'SELECT COUNT(*) as count FROM checks WHERE userId = ? AND date BETWEEN ? AND ?',
+      [userId, todayStart, todayEnd]
+    );
+
+    const hasCheckedIn = checks[0].count > 0;
+    const today = new Date().toISOString().split('T')[0];
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        userId: parseInt(userId),
+        date: today,
+        hasCheckedIn,
+        checkCount: checks[0].count
+      },
+      message: hasCheckedIn ? '今日已打卡' : '今日未打卡'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      code: 500,
+      message: '服务器错误'
+    });
+  }
+});
+
 // 定义获取群组排行榜接口，按打卡次数倒序排序
 app.get('/groups/ranking', async (req, res) => {
   try {
