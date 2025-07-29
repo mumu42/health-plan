@@ -52,15 +52,6 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
         setIsCheckedIn(true);
         setCheckInTime(storedTime);
         setCheckInData(storedData);
-        (!storedData || !storedData.startTime) && user.id && checkInfoByToday(user.id).then(res => {
-          const {exerciseType, startTime, endTime, notes} = res.data
-          setCheckInData({
-            exerciseType,
-            startTime,
-            endTime,
-            notes,
-          })
-        })
       } else {
         setIsCheckedIn(false);
         setCheckInTime('');
@@ -69,6 +60,16 @@ const CheckIn: React.FC<CheckInProps> = ({ onCheckInRequest }) => {
           startTime: '',
           endTime: '',
           notes: '',
+        });
+
+        user.id && checkInfoByToday(user.id).then(res => {
+          const {exerciseType, startTime, endTime, notes} = res.data
+          setCheckInData({
+            exerciseType,
+            startTime,
+            endTime,
+            notes,
+          })
         })
       }
     } catch (error) {
